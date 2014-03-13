@@ -1,0 +1,1 @@
+python copytools.py -a "python,git" -s "c:\\1,c:\\2"
