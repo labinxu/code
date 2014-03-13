@@ -1,4 +1,3 @@
-#--*-- coding utf-8 --*--
 #setting the path environment
 import os, platform,shutil,sys
 import getopt
@@ -9,6 +8,14 @@ dir_separate='/'
 if platform.system() == 'Windows':
     path_separate=';'
     dir_separate='\\'
+
+def help():
+    help_str='''usage: [--app][--source_dir][--help]
+    -a,-app              The application name don't contain the extent name
+    -s,--source_dir      The source directory,
+    -h,--help            Get help
+    '''
+    return help_str
 
 def getdir(_title):
     import tkFileDialog
@@ -44,9 +51,15 @@ def parseCmdLine():
     -a,-s,-d
     
     '''
-    optlist,var = getopt.getopt(sys.argv[1:],'?h:a:s:d:',['app=','source_dir=','dest_dir='])
+    optlist,var = getopt.getopt(sys.argv[1:],'?ha:s:d:',['app=','source_dir=','dest_dir=','help'])
+
+    size = len(optlist)
+    for opt,var in optlist:
+        if opt in ['-h','--help']:
+            print help()
+            return None
     # if there are more than three opts input ,take two of them
-    if len(optlist) > 2:
+    if  size> 2:
         optlist = optlist[0:2]
         print 'more than two opts input take front two'
 
@@ -62,7 +75,7 @@ def get_src_dest_dirs(optlist):
     src_dir=[]
     dest_dir=[]
     for opt,var in optlist:
-        print opt,var
+        #print opt,var
         # from the application name get dest dir
         if opt in ['-a','--app']:
             for item in var.split(','):
@@ -77,9 +90,9 @@ def get_src_dest_dirs(optlist):
             dest_dir=var.split(',')
     assert len(src_dir) == len(dest_dir)
     return zip(src_dir,dest_dir)
+
 def get_directoryname(path):
     path =path.replace('\\','/')
-    print 'get name',path
     pos = path.rfind('/')
     if pos != -1:
         return path[pos+1:]
@@ -100,14 +113,18 @@ def main():
                 continue
             print 'src folder is:' ,src_dir,dir_name
             copy_dir(src_dir,destdir+dir_separate+dir_name)
-
-if __name__=='__main__':
+def copy_func():
     optlist = parseCmdLine()
+    if not optlist:
+        return
     src_dest_dirs = get_src_dest_dirs(optlist)
-    print src_dest_dirs
+#    print src_dest_dirs
     
     for src,dest in src_dest_dirs:
         print 'copy %s to %s'%(src,dest)
-        
         copy_dir(src,dest+dir_separate+get_directoryname(src))
-   
+def test():
+    optlist = parseCmdLine()
+    print optlist
+if __name__=='__main__':
+    copy_func()
