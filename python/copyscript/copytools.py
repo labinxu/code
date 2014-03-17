@@ -3,17 +3,55 @@ import os, platform,shutil,sys
 import getopt
 
 
-path_separate = '.:'
+path_separate = ':'
 dir_separate='/'
 if platform.system() == 'Windows':
     path_separate=';'
     dir_separate='\\'
 
+def copytree(src, dst, symlinks=False):  
+    names = os.listdir(src)  
+    if not os.path.isdir(dst):  
+        os.makedirs(dst)  
+          
+    errors = []  
+    for name in names:  
+        srcname = os.path.join(src, name)  
+        dstname = os.path.join(dst, name)  
+        try:  
+            if symlinks and os.path.islink(srcname):  
+                linkto = os.readlink(srcname)  
+                os.symlink(linkto, dstname)  
+            elif os.path.isdir(srcname):  
+                copytree(srcname, dstname, symlinks)  
+            else:  
+                if os.path.isdir(dstname):  
+                    os.rmdir(dstname)  
+                elif os.path.isfile(dstname):  
+                    os.remove(dstname)  
+                shutil.copy2(srcname, dstname)  
+            # XXX What about devices, sockets etc.?  
+        except (IOError, os.error) as why:  
+            errors.append((srcname, dstname, str(why)))  
+        # catch the Error from the recursive copytree so that we can  
+        # continue with other files  
+        except OSError as err:  
+            errors.extend(err.args[0])  
+    try:  
+        shutil.copystat(src, dst)  
+    except WindowsError:  
+        # can't copy file access times on Windows  
+        pass  
+    except OSError as why:  
+        errors.extend((src, dst, str(why)))  
+    if errors:  
+        raise Error(errors) 
+
 def help():
-    help_str='''usage: [--app][--source_dir][--help]
+    help_str='''usage: [--app] [--help] [--source_dir]\n
     -a,-app              The application name don't contain the extent name
     -s,--source_dir      The source directory,
-    -h,--help            Get help
+	-p --append pach a subdirectory
     '''
     return help_str
 
@@ -33,51 +71,42 @@ def get_app_sys_path(appname):
         for root,dirs,files in os.walk(dir,topdown=True):
             for file in files:
                # print file
-                if file == appname+'.exe':
+                if file == appname+'.exe' or file == appname or file == appname+'.sh' :
                     return dir
     return None
 
 def copy_dir(src,dest):
-    if os.path.exists(dest):
-        shutil.rmtree(dest)
-    shutil.copytree(src,dest)
+   #if os.path.exists(dest):
+   #    shutil.rmtree(dest)
+    copytree(src,dest)
 def parseCmdLine():
     '''
     opts:
-    --app application name
+    --application application name
     --dest_dir copy dest directory
     --souce_dir application dir if no --app opt
+    --append pach a subdirectory
     short apts
-    -a,-s,-d
+    -a,-s,-d ,-p
     
     '''
-    optlist,var = getopt.getopt(sys.argv[1:],'?ha:s:d:',['app=','source_dir=','dest_dir=','help'])
-
-    size = len(optlist)
+    optlist,var = getopt.getopt(sys.argv[1:],'?h:a:p:s:d:',['application=','help','source_dir=','dest_dir='])
     for opt,var in optlist:
-        if opt in ['-h','--help']:
+        if opt in ['-h','--help','-?']:
             print help()
             return None
-    # if there are more than three opts input ,take two of them
-    if  size> 2:
-        optlist = optlist[0:2]
-        print 'more than two opts input take front two'
-
     return optlist
 
 #print 'python path', get_app_sys_path('python')
 def get_src_dest_dirs(optlist):
-    if len(optlist) > 2:
-        optlist = optlist[0:2]
-        print 'more than two opts input take front two'
-    assert len(optlist)==2
-
+    
     src_dir=[]
     dest_dir=[]
+    append_dir=None
     for opt,var in optlist:
-        #print opt,var
+        print opt,var
         # from the application name get dest dir
-        if opt in ['-a','--app']:
+        if opt in ['-a','--application']:
             for item in var.split(','):
                 ds=get_app_sys_path(item)
                 if not ds:
@@ -86,9 +115,17 @@ def get_src_dest_dirs(optlist):
                 dest_dir.append(ds)
         elif opt in ['-s','--source_dir']:
             src_dir=var.split(',')
+        elif opt in ['-p','--append']:
+            append_dir=var
         else:
             dest_dir=var.split(',')
     assert len(src_dir) == len(dest_dir)
+    #append the dirs
+    for i in range(len(dest_dir)):
+        if dest_dir[i][-1] != dir_separate:
+            dest_dir[i] += dir_separate
+    if append_dir:
+        dest_dir = map(lambda x : x + append_dir,dest_dir)
     return zip(src_dir,dest_dir)
 
 def get_directoryname(path):
@@ -113,18 +150,14 @@ def main():
                 continue
             print 'src folder is:' ,src_dir,dir_name
             copy_dir(src_dir,destdir+dir_separate+dir_name)
-def copy_func():
-    optlist = parseCmdLine()
-    if not optlist:
-        return
-    src_dest_dirs = get_src_dest_dirs(optlist)
-#    print src_dest_dirs
-    
-    for src,dest in src_dest_dirs:
-        print 'copy %s to %s'%(src,dest)
-        copy_dir(src,dest+dir_separate+get_directoryname(src))
-def test():
-    optlist = parseCmdLine()
-    print optlist
+
 if __name__=='__main__':
-    copy_func()
+    optlist = parseCmdLine()
+    if optlist:
+
+        src_dest_dirs = get_src_dest_dirs(optlist)
+        for src,dest in src_dest_dirs:
+            print 'copy %s to %s'%(src,dest)
+
+            copy_dir(src,dest+dir_separate+get_directoryname(src))
+
