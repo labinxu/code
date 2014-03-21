@@ -2,13 +2,74 @@
 import os, platform,shutil,sys
 import getopt
 
-
+#################################
 path_separate = ':'
 dir_separate='/'
 if platform.system() == 'Windows':
     path_separate=';'
     dir_separate='\\'
 
+optShortVars=''
+optLongVars=''
+#########################################
+import sys,platform
+if sys.hexversion > 0x03000000:
+    import winreg
+else:
+    import _winreg as winreg
+from subprocess import check_call
+
+class Environment(object):
+    def getPlatform(self):
+        return platform.system()
+
+    def __init__(self,scope):
+        pass
+    def __getattr__(self,name):
+        print 'getattr%s'%name
+        return getattr(self,name)
+    def getenv(self,name):
+        pass
+class WinEnvironment(Environment):
+    def __init__(self,scope):
+        Environment.__init__(self,scope)
+        assert scope in ('user','system')
+        if scope == 'user':
+            self.root = winreg.HKEY_CURRENT_USER
+            self.subkey = 'Environment'
+        else:
+            self.root = winreg.HKEY_LOCAL_MACHINE
+            self.subkey = r'SYSTEM\CurrentcontrolSet\Control\Session Manager\Environment'
+    def getenv(self,name):
+        key = winreg.OpenKey(self.root, self.subkey, 0, winreg.KEY_READ)
+        try:
+            value,_ = winreg.QueryValueEx(key,name)
+        except WindowsError:
+            value = ''
+        return value
+    def setenv(self,name,value):
+        value.replace('/','\\')
+        key = winreg.OpenKey(self.root, self.subkey, 0, winreg.KEY_ALL_ACCESS)
+        winreg.SetValueEx(key, name, 0, winreg.REG_EXPAND_SZ, value)
+        winreg.CloseKey(key)
+
+    def append(self,name,value):
+        vars = self.getenv(name)
+        if vars.find(value) == -1:
+            value = '%s;%s'%(vars,value)
+            self.setenv(name,value)
+        else:
+            print '%s is exist'%value
+
+def CreateEnvhelper(scope = 'user'):
+
+    if platform.system() == 'Windows':
+        environ = WinEnvironment(scope)
+    else:
+        environ =None
+    return environ
+
+############################################
 def copytree(src, dst, symlinks=False):  
     names = os.listdir(src)  
     if not os.path.isdir(dst):  
@@ -51,7 +112,7 @@ def help():
     help_str='''usage: [--app] [--help] [--source_dir]\n
     -a,-app              The application name don't contain the extent name
     -s,--source_dir      The source directory,
-	-p --append pach a subdirectory
+    -p --append pach a subdirectory
     '''
     return help_str
 
@@ -63,11 +124,9 @@ def getdir(_title):
         return (d,d[pos+1:])
     return (d,None)
 
-def get_app_sys_path(appname):
-    #
-    filename=os.environ.get('path')
-    paths = [name for name in filename.split(path_separate) if name.find(appname)!=-1]
-    for dir in paths:
+def getAppdir(dirs,appname):
+
+    for dir in dirs:
         for root,dirs,files in os.walk(dir,topdown=True):
             for file in files:
                # print file
@@ -75,10 +134,18 @@ def get_app_sys_path(appname):
                     return dir
     return None
 
+def get_app_sys_path(appname):
+    #
+    filename=os.environ.get('path')
+    paths = [name for name in filename.split(path_separate) if name.lower().find(appname.lower())!=-1]
+    return getAppdir(paths,appname)
+
 def copy_dir(src,dest):
-   #if os.path.exists(dest):
-   #    shutil.rmtree(dest)
+    '''
+    replace the files if it exist
+    '''
     copytree(src,dest)
+
 def parseCmdLine():
     '''
     opts:
@@ -90,7 +157,7 @@ def parseCmdLine():
     -a,-s,-d ,-p
     
     '''
-    optlist,var = getopt.getopt(sys.argv[1:],'?h:a:p:s:d:',['application=','help','source_dir=','dest_dir='])
+    optlist,var = getopt.getopt(sys.argv[1:],'?h:a:p:s:d:r',['run=','application=','help','source_dir=','dest_dir='])
     for opt,var in optlist:
         if opt in ['-h','--help','-?']:
             print help()
@@ -104,7 +171,6 @@ def get_src_dest_dirs(optlist):
     dest_dir=[]
     append_dir=None
     for opt,var in optlist:
-        print opt,var
         # from the application name get dest dir
         if opt in ['-a','--application']:
             for item in var.split(','):
@@ -135,29 +201,99 @@ def get_directoryname(path):
         return path[pos+1:]
     return None
 
-def main():
-    content=raw_input('Enter the app name separate by \';\' :')
-    for item in content.split(';'):
-        if len(item) >0:
-            destdir=get_app_sys_path(item)
-            if destdir==None:
-                print 'can not path %s' % item
-                continue
-            print 'dest dir is:',destdir
-            src_dir,dir_name=getdir('Select source folder')
-            if src_dir==None or dir_name == None:
-                print 'these is no select '
-                continue
-            print 'src folder is:' ,src_dir,dir_name
-            copy_dir(src_dir,destdir+dir_separate+dir_name)
+def checkEnv(name):
+    '''
+    check wheather the name is in environment settings
+    '''
+    assert len(name)>0
 
-if __name__=='__main__':
+    env = CreateEnvhelper(scope='system')
+    ret = env.getenv(name)
+    if ret:
+        print "%s is %s"%(name,ret)
+        return True
+    else:
+        env = CreateEnvhelper(scope='user')
+        ret = env.getenv(name)
+        if ret:
+            print "%s is %s"%(name,ret)
+            return True
+        
+    print '%s is not exist'%name
+    return False
+
+def setEnv(name,value):
+    env = CreateEnvhelper()
+    env.setenv(name,value)
+    print 'set %s %s'%(name,value)
+
+def checkAppPath(appname,dirName=None,path='path'):
+    #
+    msg = 'check %s in path'%appname
+    env = CreateEnvhelper(scope='system')
+    filename = env.getenv('path')
+    if not dirName:
+        paths = [name for name in filename.split(path_separate) if name.lower().find(appname.lower())!=-1]
+    else:
+        paths = [name for name in filename.split(path_separate) if name.lower().find(dirName.lower())!=-1]
+    dir = getAppdir(paths,appname)
+    if dir:
+        print '%s OK %s'%(msg,dir)
+        return True
+    else:
+        env = CreateEnvhelper(scope='user')
+        filename = env.getenv('path')
+        if not dirName:
+            paths = [name for name in filename.split(path_separate) if name.lower().find(appname.lower())!=-1]
+        else:
+            paths = [name for name in filename.split(path_separate) if name.lower().find(dirName.lower())!=-1]
+        dir = getAppdir(paths,appname)
+        if dir:
+            print '%s OK %s'%(msg,dir)
+            return True
+
+    print '%s NOK \npath:%s'%(msg,filename)
+    return False
+def getParams(param,optlist):
+    for opt,var in optlist:
+        pass
+def main():
+    ###init step 1.check android home
+    if not checkEnv('ANDROID_HOME'):
+        return
+    ###step 2. check android sdk
+    if not checkAppPath('adb','platform-tools'):
+        return
+    ###step 3. check ruby in path
+    if not checkAppPath('ruby'):
+        return
+    ###invoke setup bat
+    absCurrentDir = os.path.abspath('.')
+    setupDir =os.path.join(absCurrentDir ,'Appium/pythonWebdriver/setup.bat')
+    print setupDir
+    os.system(setupDir)
+    ###
+    
     optlist = parseCmdLine()
     if optlist:
-
         src_dest_dirs = get_src_dest_dirs(optlist)
         for src,dest in src_dest_dirs:
-            print 'copy %s to %s'%(src,dest)
-
+            print 'copy %s to %s'%(src,os.path.abspath(dest))
             copy_dir(src,dest+dir_separate+get_directoryname(src))
 
+    ###check debug.keystore
+    homeDir = os.path.expanduser('~')
+    androidDir = os.path.join(homeDir,'.android')
+    if not os.path.exists(androidDir):
+        os.system('mkdir %s'%androidDir)
+
+    keystoreDir = os.path.join(androidDir,'debug.keystore')
+    if not os.path.exists(keystoreDir):
+        print 'copy %s to %s'%(os.path.join(absCurrentDir,'debug.keystore'),keystoreDir)
+        shutil.copy(os.path.join(absCurrentDir,'debug.keystore'),keystoreDir)
+        
+    #if not exist %USERPROFILE%\.android mkdir %USERPROFILE%\.android
+    #if not exist %USERPROFILE%\.android\debug.keystorre copy %~dp0debug.keystore %USERPROFILE%\.android
+    
+if __name__=='__main__':
+    main()
