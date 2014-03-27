@@ -144,8 +144,14 @@ def copy_dir(src,dest):
     '''
     replace the files if it exist
     '''
-    copytree(src,dest)
-
+    for item in os.listdir(src):
+        if os.path.isdir(os.path.join(src, item)):
+            copytree(os.path.join(src,item), os.path.abspath(os.path.join(dest, item)))
+            print 'copy %s to %s'%(os.path.join(src, item), os.path.abspath(os.path.join(dest, item)))
+        elif os.path.isfile(os.path.join(src, item)):
+         #   print '%s is file'%item
+            shutil.copy(os.path.join(src,item), dest)
+            print 'copy %s to %s'%(os.path.join(src,item), os.path.abspath(dest))
 def parseCmdLine():
     '''
     opts:
@@ -158,6 +164,8 @@ def parseCmdLine():
     
     '''
     optlist,var = getopt.getopt(sys.argv[1:],'?h:a:p:s:d:r',['run=','application=','help','source_dir=','dest_dir='])
+    #call python copytools.py -a ruby -p ".." -s %~dp0BDD/ruby
+    #optlist=[('-a','ruby'),('-p','..'),('-s','./BDD/ruby')]
     for opt,var in optlist:
         if opt in ['-h','--help','-?']:
             print help()
@@ -174,7 +182,7 @@ def get_src_dest_dirs(optlist):
         # from the application name get dest dir
         if opt in ['-a','--application']:
             for item in var.split(','):
-                ds=get_app_sys_path(item)
+                ds=checkAppPath(item)
                 if not ds:
                     print 'can not find %s'%item
                     continue
@@ -231,7 +239,7 @@ def checkAppPath(appname,dirName=None,path='path'):
     #
     msg = 'check %s in path'%appname
     env = CreateEnvhelper(scope='system')
-    filename = env.getenv('path')
+    filename = env.getenv(path)
     if not dirName:
         paths = [name for name in filename.split(path_separate) if name.lower().find(appname.lower())!=-1]
     else:
@@ -239,10 +247,10 @@ def checkAppPath(appname,dirName=None,path='path'):
     dir = getAppdir(paths,appname)
     if dir:
         print '%s OK %s'%(msg,dir)
-        return True
+        return dir
     else:
         env = CreateEnvhelper(scope='user')
-        filename = env.getenv('path')
+        filename = env.getenv(path)
         if not dirName:
             paths = [name for name in filename.split(path_separate) if name.lower().find(appname.lower())!=-1]
         else:
@@ -250,10 +258,10 @@ def checkAppPath(appname,dirName=None,path='path'):
         dir = getAppdir(paths,appname)
         if dir:
             print '%s OK %s'%(msg,dir)
-            return True
+            return dir
 
     print '%s NOK \npath:%s'%(msg,filename)
-    return False
+    return None
 def getParams(param,optlist):
     for opt,var in optlist:
         pass
@@ -278,8 +286,7 @@ def main():
     if optlist:
         src_dest_dirs = get_src_dest_dirs(optlist)
         for src,dest in src_dest_dirs:
-            print 'copy %s to %s'%(src,os.path.abspath(dest))
-            copy_dir(src,dest+dir_separate+get_directoryname(src))
+            copy_dir(src,dest)
 
     ###check debug.keystore
     homeDir = os.path.expanduser('~')
