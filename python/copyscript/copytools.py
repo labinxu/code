@@ -265,6 +265,7 @@ def checkAppPath(appname,dirName=None,path='path'):
 def getParams(param,optlist):
     for opt,var in optlist:
         pass
+
 def main():
     ###init step 1.check android home
     if not checkEnv('ANDROID_HOME'):

@@ -5,36 +5,66 @@ if sys.hexversion > 0x03000000:
     import winreg
 else:
     import _winreg as winreg
-from subprocess import check_call    
 
 class Environment(object):
+    
     def getPlatform(self):
         return platform.system()
     
-    def __init__(self,scope):
-        pass
+    def __init__(self):
+        
+        self.pathSeparate = None
+
     def __getattr__(self,name):
         print 'getattr%s'%name
         return getattr(self,name)
+
     def getenv(self,name):
         pass
+
 class WinEnvironment(Environment):
-    def __init__(self,scope):
-        Environment.__init__(self,scope)
-        assert scope in ('user','system')
-        if scope == 'user':
-            self.root = winreg.HKEY_CURRENT_USER
-            self.subkey = 'Environment'
-        else:
-            self.root = winreg.HKEY_LOCAL_MACHINE
-            self.subkey = r'SYSTEM\CurrentcontrolSet\Control\Session Manager\Environment'
-    def getenv(self,name):
-        key = winreg.OpenKey(self.root, self.subkey, 0, winreg.KEY_READ)
+    def __init__(self):
+        Environment.__init__(self)
+        self.envPathSeparate = ";"
+
+    def getUserEnv(self, name):
+
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,'Environment', 0, winreg.KEY_READ)
         try:
             value,_ = winreg.QueryValueEx(key,name)
         except WindowsError:
             value = ''
+
         return value
+
+    def getSystemEnv(self, name):
+
+        subkey = r'SYSTEM\CurrentcontrolSet\Control\Session Manager\Environment'
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,subkey, 0, winreg.KEY_READ)
+        try:
+            value,_ = winreg.QueryValueEx(key,name)
+        except WindowsError:
+            value = ''
+
+        return value
+        
+    def getenv(self,name):
+        
+        userEnv = self.getUserEnv(name)
+        systemEnv = self.getSystemEnv(name)
+
+        ret = ''
+        if userEnv:
+            ret += userEnv
+            
+        if ret:
+            if systemEnv:
+                return ret + self.envPathSeparate + systemEnv
+            
+            return ret
+
+        return None
+
     def setenv(self,name,value):
         value.replace('/','\\')
         key = winreg.OpenKey(self.root, self.subkey, 0, winreg.KEY_ALL_ACCESS)
@@ -49,12 +79,21 @@ class WinEnvironment(Environment):
         else:
             print '%s is exist'%value
 
-def CreateEnvhelper(scope = 'user'):
+class LinuxEnvironment(Environment):
+    def __init__(self):
+        self.envPathSeparate = ":"
+        
+    def getenv(self, name):
+        pass
+    def setenv(self, name, value):
+        pass
+        
+def CreateEnvhelper():
     
     if platform.system() == 'Windows':
-        environ = WinEnvironment(scope)
+        environ = WinEnvironment()
     else:
-        environ =None
+        environ = LinuxEnvironment()
     return environ
 
 
