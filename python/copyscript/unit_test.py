@@ -14,7 +14,6 @@ def test_checkAppPath():
         debug.debug('check ruby Failed')
            
 def main():
-    
     #step 1
     if not insTools.checkEnv('ANDROID_HOME'):
         return

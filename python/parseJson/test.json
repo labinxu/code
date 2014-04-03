@@ -1,0 +1,18 @@
+[{"attributes":
+              {"sim1operatorcountry":"cn",
+              "fingerprint":"qcom/msm8625/msm8625:4.1.2/JZO54K/eng.ZYC.20140107.133330:eng/test-keys",
+              "sim1signal":"-81dBm",
+              "sn":"1acc4f6c",
+              "productcode":"059T982",
+              "sim1operatorcode":"46013",
+              "imei":"004402475336743",
+              "sim1operator":"Nokia",
+              "swversion":"0.1402.2",
+              "hwtype":"0111"},
+   "state":2,
+   "role":0,
+   "status":"{\"taskID\":\"Task_1396334657876_iibU8\",\"workspacePath\":\"\"}",
+   "compareAtts":["id"],
+   "exclusiveAtts":[],
+   "id":"Device_3CNL12096.NOE.Nokia.com_8rbBG"
+}]
