@@ -17,7 +17,7 @@ def test_checkAppPath():
         
 def main():
     #step 1
-    if not insTools.checkEnv('ANDROID_HOME1'):
+    if not insTools.checkEnv('ANDROID_HOME'):
         return
     if not insTools.checkAppPath('adb','platform-tools'):
         return
@@ -25,4 +25,3 @@ def main():
 if __name__ == '__main__':
     test_checkEnv()
     test_checkAppPath()
-    print 'h'

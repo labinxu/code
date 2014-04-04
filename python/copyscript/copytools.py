@@ -1,74 +1,11 @@
 #setting the path environment
-import os, platform,shutil,sys
+import shutil,os,sys
 import getopt
 
-#################################
-path_separate = ':'
-dir_separate='/'
-if platform.system() == 'Windows':
-    path_separate=';'
-    dir_separate='\\'
+import installTools
 
-optShortVars=''
-optLongVars=''
-#########################################
-import sys,platform
-if sys.hexversion > 0x03000000:
-    import winreg
-else:
-    import _winreg as winreg
-from subprocess import check_call
-
-class Environment(object):
-    def getPlatform(self):
-        return platform.system()
-
-    def __init__(self,scope):
-        pass
-    def __getattr__(self,name):
-        print 'getattr%s'%name
-        return getattr(self,name)
-    def getenv(self,name):
-        pass
-class WinEnvironment(Environment):
-    def __init__(self,scope):
-        Environment.__init__(self,scope)
-        assert scope in ('user','system')
-        if scope == 'user':
-            self.root = winreg.HKEY_CURRENT_USER
-            self.subkey = 'Environment'
-        else:
-            self.root = winreg.HKEY_LOCAL_MACHINE
-            self.subkey = r'SYSTEM\CurrentcontrolSet\Control\Session Manager\Environment'
-    def getenv(self,name):
-        key = winreg.OpenKey(self.root, self.subkey, 0, winreg.KEY_READ)
-        try:
-            value,_ = winreg.QueryValueEx(key,name)
-        except WindowsError:
-            value = ''
-        return value
-    def setenv(self,name,value):
-        value.replace('/','\\')
-        key = winreg.OpenKey(self.root, self.subkey, 0, winreg.KEY_ALL_ACCESS)
-        winreg.SetValueEx(key, name, 0, winreg.REG_EXPAND_SZ, value)
-        winreg.CloseKey(key)
-
-    def append(self,name,value):
-        vars = self.getenv(name)
-        if vars.find(value) == -1:
-            value = '%s;%s'%(vars,value)
-            self.setenv(name,value)
-        else:
-            print '%s is exist'%value
-
-def CreateEnvhelper(scope = 'user'):
-
-    if platform.system() == 'Windows':
-        environ = WinEnvironment(scope)
-    else:
-        environ =None
-    return environ
-
+#install tools instance
+insTools = installTools.SetUptools()
 ############################################
 def copytree(src, dst, symlinks=False):  
     names = os.listdir(src)  
@@ -106,7 +43,7 @@ def copytree(src, dst, symlinks=False):
     except OSError as why:  
         errors.extend((src, dst, str(why)))  
     if errors:  
-        raise Error(errors) 
+        raise OSError(errors) 
 
 def help():
     help_str='''usage: [--app] [--help] [--source_dir]\n
@@ -124,22 +61,6 @@ def getdir(_title):
         return (d,d[pos+1:])
     return (d,None)
 
-def getAppdir(dirs,appname):
-
-    for dir in dirs:
-        for root,dirs,files in os.walk(dir,topdown=True):
-            for file in files:
-               # print file
-                if file == appname+'.exe' or file == appname or file == appname+'.sh' :
-                    return dir
-    return None
-
-def get_app_sys_path(appname):
-    #
-    filename=os.environ.get('path')
-    paths = [name for name in filename.split(path_separate) if name.lower().find(appname.lower())!=-1]
-    return getAppdir(paths,appname)
-
 def copy_dir(src,dest):
     '''
     replace the files if it exist
@@ -147,11 +68,12 @@ def copy_dir(src,dest):
     for item in os.listdir(src):
         if os.path.isdir(os.path.join(src, item)):
             copytree(os.path.join(src,item), os.path.abspath(os.path.join(dest, item)))
-            print 'copy %s to %s'%(os.path.join(src, item), os.path.abspath(os.path.join(dest, item)))
+            print 'copy %s to %s'%(os.path.join(src, item),\
+                                    os.path.abspath(os.path.join(dest, item)))
         elif os.path.isfile(os.path.join(src, item)):
-         #   print '%s is file'%item
             shutil.copy(os.path.join(src,item), dest)
             print 'copy %s to %s'%(os.path.join(src,item), os.path.abspath(dest))
+
 def parseCmdLine():
     '''
     opts:
@@ -163,7 +85,8 @@ def parseCmdLine():
     -a,-s,-d ,-p
     
     '''
-    optlist,var = getopt.getopt(sys.argv[1:],'?h:a:p:s:d:r',['run=','application=','help','source_dir=','dest_dir='])
+    optlist,var = getopt.getopt(sys.argv[1:],'?h:a:p:s:d:e',
+                                ['execute=','application=','help','source_dir=','dest_dir='])
     #call python copytools.py -a ruby -p ".." -s %~dp0BDD/ruby
     #optlist=[('-a','ruby'),('-p','..'),('-s','./BDD/ruby')]
     for opt,var in optlist:
@@ -174,7 +97,9 @@ def parseCmdLine():
 
 #print 'python path', get_app_sys_path('python')
 def get_src_dest_dirs(optlist):
-    
+    '''
+    get a application's dir and append the command suffix path
+    '''
     src_dir=[]
     dest_dir=[]
     append_dir=None
@@ -182,7 +107,7 @@ def get_src_dest_dirs(optlist):
         # from the application name get dest dir
         if opt in ['-a','--application']:
             for item in var.split(','):
-                ds=checkAppPath(item)
+                ds=insTools.checkAppPath(item)
                 if not ds:
                     print 'can not find %s'%item
                     continue
@@ -194,104 +119,59 @@ def get_src_dest_dirs(optlist):
         else:
             dest_dir=var.split(',')
     assert len(src_dir) == len(dest_dir)
+
     #append the dirs
-    for i in range(len(dest_dir)):
-        if dest_dir[i][-1] != dir_separate:
-            dest_dir[i] += dir_separate
     if append_dir:
-        dest_dir = map(lambda x : x + append_dir,dest_dir)
+        dest_dir = map(lambda x : os.path.join(x, append_dir), dest_dir)
+
     return zip(src_dir,dest_dir)
 
-def get_directoryname(path):
-    path =path.replace('\\','/')
-    pos = path.rfind('/')
-    if pos != -1:
-        return path[pos+1:]
-    return None
-
-def checkEnv(name):
-    '''
-    check wheather the name is in environment settings
-    '''
-    assert len(name)>0
-
-    env = CreateEnvhelper(scope='system')
-    ret = env.getenv(name)
-    if ret:
-        print "%s is %s"%(name,ret)
-        return True
-    else:
-        env = CreateEnvhelper(scope='user')
-        ret = env.getenv(name)
-        if ret:
-            print "%s is %s"%(name,ret)
-            return True
-        
-    print '%s is not exist'%name
-    return False
-
-def setEnv(name,value):
-    env = CreateEnvhelper()
-    env.setenv(name,value)
-    print 'set %s %s'%(name,value)
-
-def checkAppPath(appname,dirName=None,path='path'):
-    #
-    msg = 'check %s in path'%appname
-    env = CreateEnvhelper(scope='system')
-    filename = env.getenv(path)
-    if not dirName:
-        paths = [name for name in filename.split(path_separate) if name.lower().find(appname.lower())!=-1]
-    else:
-        paths = [name for name in filename.split(path_separate) if name.lower().find(dirName.lower())!=-1]
-    dir = getAppdir(paths,appname)
-    if dir:
-        print '%s OK %s'%(msg,dir)
-        return dir
-    else:
-        env = CreateEnvhelper(scope='user')
-        filename = env.getenv(path)
-        if not dirName:
-            paths = [name for name in filename.split(path_separate) if name.lower().find(appname.lower())!=-1]
-        else:
-            paths = [name for name in filename.split(path_separate) if name.lower().find(dirName.lower())!=-1]
-        dir = getAppdir(paths,appname)
-        if dir:
-            print '%s OK %s'%(msg,dir)
-            return dir
-
-    print '%s NOK \npath:%s'%(msg,filename)
-    return None
-def getParams(param,optlist):
+def getParams(optlist):
+    cmdVar = {}
     for opt,var in optlist:
-        pass
-
-import installTools
-import debug
+        if opt in ['-a','--application']:
+            cmdVar['a'] = var
+        elif opt in ['-s','--source_dir']:
+            cmdVar['s'] = var
+        elif opt in ['-p','--append']:
+            cmdVar['p'] = var
+        elif opt in ['-e','--execute']:
+            cmdVar['e'] = var
+    return cmdVar
 
 def main():
-    
+
+    cmdVar={}
+    optlist = parseCmdLine()
+    if optlist:
+        cmdVar = getParams(optlist)
+
     ###init step 1.check android home
-    insTools = installTools.SetUptools()
     if not insTools.checkEnv('ANDROID_HOME'):
         return
-
+    
     ###step 2. check android sdk
     if not insTools.checkAppPath('adb','platform-tools'):
         return
-
+    
     ###step 3. check ruby in path
     if not insTools.checkAppPath('ruby'):
         return
 
     ###invoke setup bat
+    execPath = None
+    if cmdVar:
+        if cmdVar.has_key('e'):
+            execPath = cmdVar['e']
+    if not execPath:
+        execPath = './Appium/pythonWebdriver/setup.bat'
+    
     absCurrentDir = os.path.abspath('.')
-    setupDir =os.path.join(absCurrentDir ,'Appium/pythonWebdriver/setup.bat')
-    print setupDir
+    
+    setupDir =os.path.join(absCurrentDir ,execPath)
     os.system(setupDir)
     ###
     
-    optlist = parseCmdLine()
     if not optlist:
         optlist = [('-a', 'ruby'), ('-p', '..'), ('-s', 'c:\\Users\\laixu\\workspace\\code\\python\\copyscript\\BDD/ruby')]
 
@@ -312,8 +192,11 @@ def main():
         print 'copy %s to %s'%(os.path.join(absCurrentDir,'debug.keystore'),keystoreDir)
         shutil.copy(os.path.join(absCurrentDir,'debug.keystore'),keystoreDir)
         
-    #if not exist %USERPROFILE%\.android mkdir %USERPROFILE%\.android
-    #if not exist %USERPROFILE%\.android\debug.keystorre copy %~dp0debug.keystore %USERPROFILE%\.android
-    
 if __name__=='__main__':
-    main()
+#    main()
+
+    import inspect, os, sys
+    
+ #   this_file = inspect.getfile(inspect.currentframe())
+#    print os.path.abspath(os.path.dirname(this_file))
+    print inspect.stack()

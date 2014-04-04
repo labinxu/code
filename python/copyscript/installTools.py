@@ -8,6 +8,8 @@ class SetUptools(object):
         self.environ = ENV.CreateEnvhelper()
 
     def getAppdir(self, paths, appname):
+
+        #replace the path reference
         for dir in paths:
             ret = re.match('%.*%', dir)
             if ret:
@@ -21,8 +23,8 @@ class SetUptools(object):
             for root, dirs, files in os.walk(dir, topdown = True):
                 for file in files:
                     if file in [appname+'.exe', appname, appname+'.sh']:
-                        debug.debug('Found %s in %s' % (appname, dir))
-                        return dir
+                        debug.debug('Found %s in %s' % (appname, root))
+                        return root
         return None
     
     def checkEnv(self, name):
