@@ -266,16 +266,24 @@ def getParams(param,optlist):
     for opt,var in optlist:
         pass
 
+import installTools
+import debug
+
 def main():
+    
     ###init step 1.check android home
-    if not checkEnv('ANDROID_HOME'):
+    insTools = installTools.SetUptools()
+    if not insTools.checkEnv('ANDROID_HOME'):
         return
+
     ###step 2. check android sdk
-    if not checkAppPath('adb','platform-tools'):
+    if not insTools.checkAppPath('adb','platform-tools'):
         return
+
     ###step 3. check ruby in path
-    if not checkAppPath('ruby'):
+    if not insTools.checkAppPath('ruby'):
         return
+
     ###invoke setup bat
     absCurrentDir = os.path.abspath('.')
     setupDir =os.path.join(absCurrentDir ,'Appium/pythonWebdriver/setup.bat')
@@ -284,6 +292,9 @@ def main():
     ###
     
     optlist = parseCmdLine()
+    if not optlist:
+        optlist = [('-a', 'ruby'), ('-p', '..'), ('-s', 'c:\\Users\\laixu\\workspace\\code\\python\\copyscript\\BDD/ruby')]
+
     if optlist:
         src_dest_dirs = get_src_dest_dirs(optlist)
         for src,dest in src_dest_dirs:
@@ -292,6 +303,7 @@ def main():
     ###check debug.keystore
     homeDir = os.path.expanduser('~')
     androidDir = os.path.join(homeDir,'.android')
+
     if not os.path.exists(androidDir):
         os.system('mkdir %s'%androidDir)
 
