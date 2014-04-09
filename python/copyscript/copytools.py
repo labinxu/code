@@ -68,11 +68,11 @@ def copy_dir(src,dest):
     for item in os.listdir(src):
         if os.path.isdir(os.path.join(src, item)):
             copytree(os.path.join(src,item), os.path.abspath(os.path.join(dest, item)))
-            print 'copy %s to %s'%(os.path.join(src, item),\
+            print 'copy %s to %s'%(os.path.abspath(os.path.join(src, item)),\
                                     os.path.abspath(os.path.join(dest, item)))
         elif os.path.isfile(os.path.join(src, item)):
             shutil.copy(os.path.join(src,item), dest)
-            print 'copy %s to %s'%(os.path.join(src,item), os.path.abspath(dest))
+            print 'copy %s to %s'%(os.path.abspath(os.path.join(src,item)), os.path.abspath(dest))
 
 def parseCmdLine():
     '''
