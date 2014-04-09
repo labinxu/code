@@ -101,20 +101,3 @@ def CreateEnvhelper():
         environ = LinuxEnvironment()
         debug.debug('Linux tool created')
     return environ
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
