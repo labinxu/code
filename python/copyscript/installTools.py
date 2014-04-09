@@ -25,6 +25,7 @@ class SetUptools(object):
                     if file in [appname+'.exe', appname, appname+'.sh']:
                         debug.debug('Found %s in %s' % (appname, root))
                         return root
+        debug.debug('Can not found %s in %s'%(appname, paths))
         return None
     
     def checkEnv(self, name):
@@ -36,11 +37,12 @@ class SetUptools(object):
         debug.debug('%s is not found' % name)
         return False
     
-    def checkAppPath(self, appname,dirName=None, path='path'):
+    def checkAppPath(self, appname,dirName=None, path='PATH'):
 
         assert appname
         paths = self.environ.getenv(path)
         if not paths:
+            debug.debug('can not found environ %s'%path)
             return None
         if not dirName:
             paths = [dir for dir in paths.split(self.environ.envPathSeparate) \

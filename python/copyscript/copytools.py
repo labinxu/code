@@ -147,6 +147,7 @@ def main():
         cmdVar = getParams(optlist)
 
     ###init step 1.check android home
+
     if not insTools.checkEnv('ANDROID_HOME'):
         return
     
@@ -173,7 +174,7 @@ def main():
     ###
     
     if not optlist:
-        optlist = [('-a', 'ruby'), ('-p', '..'), ('-s', 'c:\\Users\\laixu\\workspace\\code\\python\\copyscript\\BDD/ruby')]
+        optlist = [('-a', 'ruby'), ('-p', '..'), ('-s', './BDD/ruby')]
 
     if optlist:
         src_dest_dirs = get_src_dest_dirs(optlist)
@@ -193,10 +194,6 @@ def main():
         shutil.copy(os.path.join(absCurrentDir,'debug.keystore'),keystoreDir)
         
 if __name__=='__main__':
-#    main()
+    main()
 
-    import inspect, os, sys
-    
- #   this_file = inspect.getfile(inspect.currentframe())
-#    print os.path.abspath(os.path.dirname(this_file))
-    print inspect.stack()
+

@@ -1,10 +1,13 @@
 #coding utf-8
 
 import sys,platform
+import os
+import debug
+
 if sys.hexversion > 0x03000000:
     import winreg
-else:
-    import _winreg as winreg
+#else:
+#    import _winreg as winreg
 
 class Environment(object):
     
@@ -84,7 +87,8 @@ class LinuxEnvironment(Environment):
         self.envPathSeparate = ":"
         
     def getenv(self, name):
-        pass
+        return os.environ.get(name)
+
     def setenv(self, name, value):
         pass
         
@@ -92,8 +96,10 @@ def CreateEnvhelper():
     
     if platform.system() == 'Windows':
         environ = WinEnvironment()
+        debug.debug('window tool created')
     else:
         environ = LinuxEnvironment()
+        debug.debug('Linux tool created')
     return environ
 
 
