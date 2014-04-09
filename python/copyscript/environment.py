@@ -3,11 +3,11 @@
 import sys,platform
 import os
 import debug
-
-if sys.hexversion > 0x03000000:
-    import winreg
-#else:
-#    import _winreg as winreg
+if platform.system() == 'Windows':
+    if sys.hexversion > 0x03000000:
+        import winreg
+    else:
+        import _winreg as winreg
 
 class Environment(object):
     
