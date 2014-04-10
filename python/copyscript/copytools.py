@@ -1,7 +1,7 @@
 #setting the path environment
 import shutil,os,sys
 import getopt
-
+import debug
 import installTools
 
 #install tools instance
@@ -43,7 +43,7 @@ def copytree(src, dst, symlinks=False):
     except OSError as why:  
         errors.extend((src, dst, str(why)))  
     if errors:  
-        raise OSError(errors) 
+        raise OSError(errors)
 
 def help():
     help_str='''usage: [--app] [--help] [--source_dir]\n
@@ -145,7 +145,9 @@ def main():
     optlist = parseCmdLine()
     if optlist:
         cmdVar = getParams(optlist)
-
+    else:
+        return
+    
     ###init step 1.check android home
 
     if not insTools.checkEnv('ANDROID_HOME'):
@@ -172,9 +174,8 @@ def main():
     setupDir =os.path.join(absCurrentDir ,execPath)
     os.system(setupDir)
     ###
-    
-    if not optlist:
-        optlist = [('-a', 'ruby'), ('-p', '..'), ('-s', './BDD/ruby')]
+
+#        optlist = [('-a', 'ruby'), ('-p', '..'), ('-s', './BDD/ruby')]
 
     if optlist:
         src_dest_dirs = get_src_dest_dirs(optlist)
