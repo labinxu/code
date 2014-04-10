@@ -16,6 +16,7 @@ class SetUptools(object):
                 refer = self.environ.getenv(ret.group(0)[1:-1])
                 if refer:
                     dir = dir.replace(ret.group(0),refer)
+                    debug.debug('referce dir %s'%dir)
                 else:
                     debug.debug('%s not found in environment' % ret.group(0)[1:-1])
                     return None
