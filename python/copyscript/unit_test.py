@@ -1,7 +1,6 @@
 #coding utf-8
 import os
 import shutil
-
 import unittest
 import installTools
 import copytools
@@ -21,7 +20,7 @@ class TestEnv(unittest.TestCase):
 
     def testGetAppdir(self):
         self.assertTrue('platform' in self.insTools.getAppdir(['%ANDROID_HOME%/platform-tools'],'adb'))
-
+        
     def testcopydir(self):
         testdir = './testcopy'
         if os.path.exists(testdir):
