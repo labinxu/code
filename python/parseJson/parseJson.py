@@ -29,14 +29,14 @@ class product:
         print ' --------------- ' 
 
     def parseJson(self):
-        f = open('Att31D4.tmp.json')
+        f = open('./test_multi.json')
         try: 
             print 'parse json start...'             
             decodeJson = json.loads(f.read())
-            self.imei=decodeJson[0]['attributes']['imei']
-            self.role=decodeJson[0]['role']
-            self.detailedConnectionId=decodeJson[0]['id'] 
-            decodeStatus=json.loads(decodeJson[0]['status'])
+            self.imei=decodeJson[1]['attributes']['imei']
+            self.role=decodeJson[1]['role']
+            self.detailedConnectionId=decodeJson[1]['id'] 
+            decodeStatus=json.loads(decodeJson[1]['status'])
             self.connectionId=decodeStatus['id']
                 
             

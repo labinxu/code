@@ -1,0 +1,49 @@
+
+#ignore thumbnails created by windows
+Thumbs.db
+#Ignore files build by Visual Studio
+*.pyc
+*.obj
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+[Bb]in
+*.lib
+*.sbr
+obj/
+[Rr]elease*/
+_ReSharper*/
+#Ignore Granite reports/logs
+Framework_logs/
+*_results/
+_templog_?.blx
+*_log.txt
+gui/captured bitmaps/
+gui/Capture tool/temp
+gui/xml/
+modified.settings
+*.pyc
+*.*_backup
+image-dictionary.txt
+framework/core/data/temp/image_comparer
+gui/tempBLX
+framework/tempBLX
+settings/*.xml
+test_sets/new_testset.testset
+gui/test_reports_temp
+#Ignore ultima generated file
+gui/ultima.txt
+framework/Capture tool/temp/application_xml/
+framework/Capture tool/
