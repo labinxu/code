@@ -1,7 +1,7 @@
 #coding -*- utf-8 _8-
 
 import os, sys, json, time, subprocess, zipfile
-
+import shutil
 class writer: 
     def __init__(self, logfile, stdout): 
         self.stdout = stdout 
@@ -121,7 +121,7 @@ class Parse(object):
     def parse(self):
         return None
     
-class ParseJson(Parse):
+class ParseProductJson(Parse):
 
     def __init__(self, data):
         self.data = data
@@ -146,8 +146,49 @@ class ParseJson(Parse):
         finally:
             f.close()
         return self.products
-
+class ApkTestItem(object):
+    def __init__(self):
+        self.itemtype = None
+        self.itemName = None
+        self.apkName = None
+        self.package = None
+        self.testapk = None
+        self.parameters = None
+        self.runner = None
+    def displayAttributes(self):
+        for name, value in vars(self).items():
+            print '%s = %s'%(name, value)
+def DisplayApkItems(apkitems):
+    for item in apkitems:
+        item.displayAttributes()
     
+class ParseInstrumentJson(Parse):
+    def __init__(self, data):
+        self.data = data
+    def getApkTestName(self, jsonfilename):
+        assert jsonfilename is not None
+
+        return jsonfilename[0:-5]
+        
+    def parse(self,files):
+        if isinstance(files,list):
+            apkItems =[]
+            for file in files:
+                apkItem = ApkTestItem()
+                f = open(file)
+                decodeJson = json.loads(f.read())
+                apkItem.itemtype = decodeJson['type']
+                apkItem.itemName = self.getApkTestName(file)
+                apkItem.apkName =decodeJson[apkItem.itemName][0]['apk']
+                apkItem.package = decodeJson[apkItem.itemName][0]['package']
+                apkItem.testapk = decodeJson[apkItem.itemName][0]['testapk']
+                apkItem.testpackage = decodeJson[apkItem.itemName][0]['testpackage']
+                apkItem.runner = decodeJson[apkItem.itemName][0]['runner']
+                apkItem.parameters = decodeJson[apkItem.itemName][0]['parameters']
+                apkItems.append(apkItem)
+                f.close()
+            return apkItems
+
 class ExecuteHelper():
     def __init__(self):
         
@@ -157,10 +198,11 @@ class ExecuteHelper():
 
     def initProducts(self,jsonfile):
         if jsonfile:
-            self.products = ParseJson(jsonfile).parse()
+            self.products = ParseProductJson(jsonfile).parse()
         else:
             #using default data
-            self.products = ParseJson('devices.json').parse()
+            if os.path.exists('devices.json'):
+                self.products = ParseProductJson('devices.json').parse()
         return self.products
 
     def getProductsSn(self):
@@ -174,11 +216,12 @@ class ExecuteHelper():
         import optparse
         usage = "usage: %prog [options] arg"
         parser = optparse.OptionParser(usage)
-        parser.add_option('-j', '--json', dest = 'jsonfile', help = 'contains product information')
+        parser.add_option('-p', '--product', dest = 'product', help = 'contains product information')
         parser.add_option('-f', '--flash', dest = 'flashtool',help = 'flash tool name and path')
         parser.add_option('-t', '--testset', dest ='testset', help='test case configure contains test case')
         parser.add_option('-i',"--instrument",action='store_true' , help = 'instrument test')
         parser.add_option('-m', '--marble', action ='store_true',dest = 'marble', help ='marble test')
+        parser.add_option('-A', '--marbletool',dest = 'marbletool',help ='marble tools name eg: ../marble.py')
         parser.add_option('-M', '--Monkey', dest = 'Monkey', help = 'Monkey test')
         parser.add_option('-l', '--logfile', dest = 'logfile', help = 'log file save the result')
         parser.add_option('-T', '--testmode', dest ='testmode',action = 'store_false', help = 'for test mode for development')
@@ -186,6 +229,71 @@ class ExecuteHelper():
         return parser.parse_args()[0]
 
 executeHelper = ExecuteHelper()
+
+class TestTool(object):
+    def __init__(self):
+        pass
+
+    def generatorLogfileName(self, testset):
+
+        tmpstr = testset.replace('\\','/')
+        testsetname = tmpstr.split('/')[-1]
+        if len(testset) > 2:
+            logfilename = "%s_%s%s"%(self.name,testsetname,'.log')
+        return logfilename
+
+class Instrument(TestTool):
+    def __init__(self,commantTool, products,apkItems):
+
+        self.name = 'Instrument'
+        self.products = products
+        self.apkItems = apkItems
+        self.commandTool = commandTool
+        #inclue apk info and parameters
+        
+    def run(self):
+        
+        for product in self.products:
+            for apkItem in self.apkItems:
+
+                instrumentCmd = ' -s ' + product.sn + ' uninstall ' + apkItem.package
+                self.commandTool.runInstrument(instrumentCmd,'marble.log')
+                instrumentCmd = ' -s ' + product.sn + ' uninstall ' + apkItem.testpackage
+                self.commandTool.runInstrument(instrumentCmd,'marble.log')
+
+                instrumentCmd = ' -s %s install %s'%(product.sn ,apkItem.apkName)
+                self.commandTool.runInstrument(instrumentCmd,'marble.log')
+                instrumentCmd = ' -s %s install %s'%(product.sn ,apkItem.testapk)
+                self.commandTool.runInstrument(instrumentCmd,'marble.log')
+
+            for product in self.products:
+                for apkItem in self.apkItems:
+
+                    instrumentCmd = ' -s %s shell am instrument -r -w %s/%s %s'%(product.sn, apkItem.testpackage, apkItem.runner, apkItem.parameters)
+                    self.commandTool.runInstrument(instrumentCmd, 'Instrument.log')
+
+class Marble(TestTool):
+    def __init__(self,commandTool, marbleTool, products):
+
+        self.name = "Marble"
+        self.products = products
+        self.marbleTool = marbleTool
+        self.commandTool = commandTool
+    def run(self,testset):
+
+        print 'starting marble test ...'
+        #copy marble to currentent
+        if os.path.exists(self.marbleTool) and not os.path.exists('./marble'):
+            shutil.copytree(self.marbleTool,'marble')
+        print 'copy %s to %s' % (self.marbleTool,os.path.abspath('./marble'))
+        #if os.path.exists('./marble'):
+         #   shutil.copyfile('./execute.py', './marble/execute.py')
+
+        print 'change work dir to %s'%os.path.abspath('./marble/framework')
+        os.chdir('./marble/framework')
+        for product in self.products:
+            marbleCommand = " marble.py --connection %s --test_set %s"% (product.sn, testset)        
+            self.commandTool.runMarble(marbleCommand, self.generatorLogfileName(testset))
 
 def main(): 
     # Product list
@@ -196,8 +304,10 @@ def main():
     if testmode:
         products = executeHelper.getProducts()
     else:
-        jsonfile = cmdparams.ensure_value('jsonfile',None)
-        products = executeHelper.initProducts(jsonfile)
+        product = cmdparams.ensure_value('product',None)
+        products = executeHelper.initProducts(product)
+
+    #display the products
     DisplayProducts(products)
     #step 2 flash
     flashtool = cmdparams.ensure_value('flashtool',None)
@@ -212,7 +322,7 @@ def main():
  #       return
 
     #step3 start test case
-    tool = commandTool('.')
+    tool = commandTool(os.path.abspath('.'))
     logfile = cmdparams.ensure_value('logfile', None)
 
     #monkeytest
@@ -228,52 +338,36 @@ def main():
     if testset:
         print 'testset is :%s' % testset
     else:
-        return 'test set is none'
+        print 'test set is none print input it'
     #marble test
-    marble = cmdparams.ensure_value("marble", None)
-    if marble:
-        print 'starting marble test'
-        marbleCommand = ' --test_set' + testset
-        if logfile:
-            tool.runMarble(marbleCommand,logfile)
-        else:
-            tool.runMarble(marbleCommand,'marble.log')
-
-    #instrument test
-    instrument = cmdparams.ensure_value('instrument', None)
     if not logfile:
-        logfile = 'instrument.log'
+        logfile = 'marble.log'
         print 'use default logfile:%s' % logfile
 
+    marble = cmdparams.ensure_value("marble", None)
+    if marble:
+        marbletool = cmdparams.ensure_value('marbletool',None)
+        marble = Marble(tool, marbletool, products)
+        marble.run(testset)
+        
+    #instrument test
+    instrument = cmdparams.ensure_value('instrument', None)
     if instrument:
         print 'starting instrument testing ...'
-        #install apk
-        ## adb -s c2a4244 uninstall com.android.notepad                  *
-        ## adb -s c2a4244 uninstall com.notepadblackboxtest
-        ## adb -s c2a4244 install NotePad.apk                                         *
-        ## adb -s c2a4244 install NotePadBlackBoxTest.apk
-        for product in products:
-            for uninstallapp in executeHelper.uninstalllist:
-                instrumentCmd = ' -s ' + product.sn + ' uninstall ' + uninstallapp
-                tool.runInstrument(instrumentCmd, logfile)
-                print 'uninstall %s'%uninstallapp
+        #get the apktestitems from config file
+        f = open('index')
+        files = []
+        for line in f.readlines():
+            files.append(line.replace('\n',''))
+        f.close()
+
+        parseinstrument = ParseInstrumentJson()
+        items = parseinstrument.parse(files)
+        DisplayApkItems(items)
+
+        instrument = Instrument(tool, products, items)
+        Instrument.run()
                 
-            for installapp in executeHelper.installlist:
-                instrumentCmd = ' -s ' + product.sn + ' install ' + installapp
-                tool.runInstrument(instrumentCmd, logfile)
-                print 'install %s' % installapp
-
-        for product in products:
-            instrumentCmd = ' -s ' + product.sn + ' shell am instrument -r -w '+ testset
-            #run test case
-            tool.runInstrument(instrumentCmd, logfile)
-
-        #uninstall apk
-        for product in products:
-            for uninstallapp in executeHelper.uninstalllist:
-                instrumentCmd = ' -s ' + product.sn + ' uninstall ' + uninstallapp
-                tool.runInstrument(instrumentCmd, logfile)
-        
     print 'finished'
 if __name__ == '__main__': 
     main()

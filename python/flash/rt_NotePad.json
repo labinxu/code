@@ -1,0 +1,14 @@
+{
+"type":"robotium",
+"rt_NotePad":
+[
+        {
+        "apk":"NotePad.apk",
+        "package":"com.android.notepad",
+        "testapk":"rt_NotePad.apk",
+        "testpackage":"com.notepadblackboxtest",
+        "runner":"android.test.Instrument",
+        "parameters":""
+        }
+]
+}

@@ -1,7 +1,7 @@
 #coding utf-8
 
 import execute,unittest, os
-
+import json
 class TestExecute(unittest.TestCase):
     def testJson(self):
         try:
@@ -11,7 +11,7 @@ class TestExecute(unittest.TestCase):
             print 'error'
             
     def testRunInterminal(self):
-        self.assertTrue(os.system('python execute.py -j "devices.json"')==0)
+        self.assertTrue(os.system('python execute.py -p "devices.json"')==0)
         
     def testExecuteHelperforSN(self):
         product = execute.Product()
@@ -27,10 +27,22 @@ class TestExecute(unittest.TestCase):
         cmdparams = execute.executeHelper.parseCmdLine()
         ## instrument = cmdparams.ensure_value('instrument', None)
         ## testmode = cmdparams.ensure_value('testmode', None)
- 
-cmdparams = execute.executeHelper.parseCmdLine()
+    def testInstrumentJson(self):
+        parseinstrument = execute.ParseInstrumentJson('rt_node')
 
-print cmdparams.ensure_value('instrument', None)
+        items = parseinstrument.parse(['rt_NotePad.json'])
+        if items:
+            execute.DisplayApkItems(items)
+    def testInstrumentJsonfromfile(self):
+        f = open('index')
+        files =[]
+        for line in f.readlines():
+            files.append(line.replace('\n',''))
+        f.close()
+        parseinstrument = execute.ParseInstrumentJson('rt_node')
 
-print cmdparams.ensure_value('testmode', None)
-#unittest.main()
+        items = parseinstrument.parse(files)
+        if items:
+            execute.DisplayApkItems(items)
+
+unittest.main()
