@@ -1,6 +1,6 @@
 {
-"type": "instrument",
-"rt_NotePad":
+"type": "unittest",
+"ut_NotePad":
 [
         {
             "apk":"NotePad.apk",
@@ -8,7 +8,7 @@
             "testapk":"rt_NotePad.apk",
             "testpackage":"com.notepadblackboxtest",
             "runner":"android.test.InstrumentationTestRunner",
-			"parameters":""
+			"parameter":""
         }
 		
 ]

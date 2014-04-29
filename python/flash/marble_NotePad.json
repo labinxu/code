@@ -1,0 +1,12 @@
+{
+"type":"marble",
+"marble_NotePad":
+[
+        {
+            "marbleTool":"c:\\marble",
+            "testset":"..\\test_sets\\marble_self_tests.testset",
+            "parameters":""
+		}	
+		
+]
+}
