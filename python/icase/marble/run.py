@@ -2,10 +2,20 @@
 import sys,os,shutil,subprocess,time
 sys.path.append('../')
 from utils.utils import Parse,JsonItem,TestTool,Logger
-def Start(products,filename, decodeJson):
-    Marble(products,filename, decodeJson).run()
+def Start(products,filename=None, decodeJson=None,items = None):
+    if decodeJson:
+        Marble(products,filename, decodeJson).run()
+    else:
+        Marble(products,filename,items = items).run()
     #print 'run test case'
-       
+def CreateItem(cmdparams):
+    item = MarbleItem()
+    item.itemType = "marble"
+    item.itemName = item.itemType
+    item.testset = cmdparams.testset and cmdparams.testset or ''    
+    item.marbleTool = cmdparams.marbletool and cmdparams.marbletool or ''
+    item.parameters = cmdparams.parameters and cmdparams.parameters or ''   
+    return [item]
 class MarbleItem(JsonItem):
     def __init__(self):
         JsonItem.__init__(self)
@@ -18,7 +28,7 @@ class MarbleJsonParser(Parse):
     def parse(self,decodeJson):
     
         item = MarbleItem()
-        item.itemtype = decodeJson['type']
+        item.itemType = decodeJson['type']
         item.itemName = self.getJsonName(self.filename)
         item.marbleTool = decodeJson[item.itemName][0]['marbleTool']
         item.testset =  decodeJson[item.itemName][0]['testset']
@@ -26,11 +36,14 @@ class MarbleJsonParser(Parse):
         return [item]
 
 class Marble(TestTool):
-    def __init__(self, products,filename, decodeJson):
+    def __init__(self, products,filename,decodeJson = None, items = None):
         TestTool.__init__(self)    
         self.name = "Marble"
         self.products = products
-        self.testItems = MarbleJsonParser(filename).parse(decodeJson)
+        if items:
+            self.testItems = items
+        else:
+            self.testItems = MarbleJsonParser(filename).parse(decodeJson)
         self.workspace = os.path.abspath(os.getcwd())
         self.logdir = None
     def getCommand(self,toolArguments):

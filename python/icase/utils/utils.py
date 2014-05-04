@@ -1,16 +1,5 @@
 import os,zipfile
 class UtilsHelper():
-    def parseProductFile(self,jsonfile):
-        if jsonfile:
-            self.products = ParseProductJson(jsonfile).parse()
-            print 'init products info %s'%jsonfile
-        else:
-            #using default data
-            if os.path.exists('devices.json'):
-                self.products = ParseProductJson('devices.json').parse()
-                print 'init products info %s'%jsonfile
-        return self.products
-
     def getProductsSn(self):
         return [product.sn for product in self.products]
     
@@ -24,14 +13,24 @@ class UtilsHelper():
         parser = optparse.OptionParser(usage)
         parser.add_option('-p', '--product', dest = 'product', help = 'contains product information')
         parser.add_option('-f', '--flash', dest = 'flashtool',help = 'flash tool name and path')
-        parser.add_option('-t', '--testset', dest ='testset', help='test case configure contains test case')
-        parser.add_option('-i',"--instrument",dest = 'instrument',action='store_true' , help = 'instrument test')
-        parser.add_option('-m', '--marble', dest = 'marble', action ='store_true', help ='marble test')
+        
+        parser.add_option('-T','--testtype',dest = 'testtype',help = 'type of the test eg: marble ,instrument,Monkey...')
+        
+        #marble params
         parser.add_option('-A', '--marbletool',dest = 'marbletool',help ='marble tools name eg: ../marble.py')
-        parser.add_option('-M', '--Monkey', dest = 'Monkey', help = 'Monkey test')
-        parser.add_option('-l', '--logfile', dest = 'logfile', help = 'log file save the result')
-        parser.add_option('-T', '--testmode', dest ='testmode',action = 'store_false', help = 'for test mode for development')
-
+        parser.add_option('-t', '--testset', dest ='testset', help='test case configure contains test case')
+        
+        #instrument params
+        parser.add_option('-a', '--apk',dest = 'apk',help ='apk name')
+        parser.add_option('-k', '--package',dest = 'package',help ='package name')
+        parser.add_option('-e', '--testapk',dest = 'testapk',help ='testapk name')
+        parser.add_option('-c', '--testpackage',dest = 'testpackage',help ='testpackage name')
+        parser.add_option('-r', '--runner',dest = 'runner',help ='runner name')
+        
+        #Monkey command
+        parser.add_option('-O', '--Monkey', dest = 'Monkey', help = 'Monkey test')
+        
+        parser.add_option('-P', '--parameters',dest = 'parameters',help ='marble tools name eg: ../marble.py')
         return parser.parse_args()
 
 class Parse(object):
@@ -76,7 +75,7 @@ class Logger:
 
 class JsonItem(object):
     def __init__(self):
-        self.parameters = None
+        self.parameters = ""
         self.itemType = None
         self.itemName = None
         

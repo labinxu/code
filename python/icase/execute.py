@@ -3,7 +3,7 @@
 
 from utils.utils import UtilsHelper,Parse
 
-import importlib ,json,os
+import importlib ,json,os,platform
 
 def getModule(modulename):
     print '%s.run'%modulename
@@ -60,30 +60,41 @@ def getJsonInstances(indexfile):
         jsonList.append((jsonObj,file))
         f.close()
     return jsonList
-    
+def flashPhone(productSN):
+    if platform.system() == 'Windows' and os.path.exists('Ara_flash_device.bat'):
+        os.system('Ara_flash_device.bat %s'%productSN)
+    elif os.path.exists('Ara_flash_device.sh'):
+        os.system('Ara_flash_device.sh %s'%productSN)
+    else:
+        print 'flash error %s'%productSN
+        
 def main():
     utilHelper = UtilsHelper()
     
     cmdparams,vars = utilHelper.parseCmdLine()
-    print cmdparams
     
-    #parse products
-    products = ParseProductJson('devices.json').parse()
-    
-    if cmdparams.marble:
+    #command starter
+    if cmdparams.testtype:
+        products = ParseProductJson(cmdparams.product).parse()
+        for product in products:
+            flashPhone(product.sn)
         currentworkspace = os.path.abspath(os.getcwd())
-        moduleLauncher = getModule('marble')
-        moduleLauncher.Start(products,None,None)
+        moduleLauncher = getModule(cmdparams.testtype)
+        items = moduleLauncher.CreateItem(cmdparams)
+        moduleLauncher.Start(products,cmdparams.testtype+'.json',items = items)
         os.chdir(currentworkspace)
-   
-    #parse index 
-    jsonlist = getJsonInstances('index')
-    for jsonObj,file in jsonlist:
-        currentworkspace = os.path.abspath(os.getcwd())
-        testType = jsonObj['type']
-        moduleLauncher = getModule(testType)
-        moduleLauncher.Start(products,file, jsonObj)
-        os.chdir(currentworkspace)
+    else:    
+        #parse index 
+        products = ParseProductJson('devices.json').parse()
+        for product in products:
+            flashPhone(product.sn)
+        jsonlist = getJsonInstances('index')
+        for jsonObj,file in jsonlist:
+            currentworkspace = os.path.abspath(os.getcwd())
+            testType = jsonObj['type']
+            moduleLauncher = getModule(testType)
+            moduleLauncher.Start(products,file, decodeJson=jsonObj)
+            os.chdir(currentworkspace)
 if __name__ == '__main__': 
     main()
     

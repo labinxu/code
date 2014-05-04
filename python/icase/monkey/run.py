@@ -2,9 +2,18 @@
 import sys,os,shutil,subprocess,time
 sys.path.append('../')
 from utils.utils import Parse,JsonItem,TestTool,Logger
-def Start(products,filename, decodeJson):
-    Monkey(products,filename, decodeJson).run()
+'''
+python execute.py --testtype monkey --parameters "--thrill -v -v -v -s 200 10000"
+'''
+def Start(products,filename, decodeJson=None,items=None):
+    Monkey(products,filename, decodeJson,items).run()
     #print 'run test case'
+def CreateItem(cmdparams):
+    item = MonkeyItem()
+    item.itemType = 'Monkey'
+    item.itemName = 'Monkey'
+    item.parameters = cmdparams.parameters and cmdparams.parameters or ''
+    return [item]
 
 class MonkeyItem(JsonItem):
     def __init__(self):
@@ -21,13 +30,16 @@ class MonkeyJsonParser(Parse):
         item.parameters = decodeJson[item.itemName][0]['parameters']
         return [item]
 class Monkey(TestTool):
-    def __init__(self,products,filename, decodeJson):
+    def __init__(self,products,filename, decodeJson = None,items = None):
         TestTool.__init__(self)
         self.resultdirs = './results'
         self.logName = 'Monkey.log'
         self.name = 'Monkey'
         self.products = products
-        self.items = self.testItems = MonkeyJsonParser(filename).parse(decodeJson)
+        if decodeJson:
+            self.items = self.testItems = MonkeyJsonParser(filename).parse(decodeJson)
+        else:
+            self.items = items
         self.compressName = 'result.zip'
     def getCommand(self, toolArguments):
         cmd = 'adb %s'%toolArguments
