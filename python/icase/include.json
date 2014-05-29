@@ -1,0 +1,31 @@
+{
+    "platform":"AOL",
+    "revision":"b5429d2bd8b3f8f235bb10d9e44278daab5b6c4f",
+    "filename":"msm-8x16-4.4-master.xml", 
+    "includes":
+    [
+        {
+            "filename": "msm-8x16-4.4-inherited.xml",
+            "includes": [],
+            "repositories": 
+            {
+                "groups": ["nokia","default"],
+                "name": "aol1/platform/packages/apps/Gallery2",
+                "path": "packages/apps/Gallery2",
+                "revision": "refs/heads/aol3.x-common/master"
+            }
+        },
+        {
+            "filename": "aol3.x-apps.xml"
+        }
+    ],
+    "repositories":
+    [ 
+        { 
+            "groups":["default", "nokia"], 
+            "name":"aol1/prebuiltimages-msm-8x16-4.4-01",
+            "path":"prebuiltimages",
+            "revision":"refs/heads/msm-8x16-4.4/upstream/r1112.3"
+        }
+    ] 
+}
