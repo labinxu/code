@@ -23,32 +23,40 @@ from sites.ali.product import CompanyFromProduct
 
 
 class TCompanyFromProduct(unittest.TestCase):
+    def setUp(self):
+        pass
+
     def testCompanyFromProduct(self):
         companyfrom = CompanyFromProduct(url, postdata)
         res = companyfrom.getCompanies()
-        for company in res:
-            print(company.name)
-            print(company.url)
+        print(len(res))
+        # for company in res:
+        #     print(company.name)
+        #     print(company.url)
 
     def testParSefile(self):
-
-        print('testParSefile')
         f = open('test.html', 'r')
         result = f.read()
         f.close()
         page = BeautifulSoup(result)
         companies = []
-        for item in page.find_all('div',
-                          attrs={'class': 'sm-offerShopwindow-company fd-clr'}):
-
-            for sub in item.find_all('a',
-                                     attrs={'class': 'sm-previewCompany sw-mod-previewCompanyInfo'}):
+        attrs = {'class': 'sm-offerShopwindow-company fd-clr'}
+        subattrs = {'class': 'sm-previewCompany sw-mod-previewCompanyInfo'}
+        for item in page.find_all('div', attrs=attrs):
+            for sub in item.find_all('a', attrs=subattrs):
                 company = Company()
                 company.name = sub.string.replace('\n', '')
                 company.url = sub.get('href')
                 companies.append(company)
 
-        for company in companies:
-            print(company.name, company.url)
-        print(len(companies))
+        # for company in companies:
+        #     print(company.name, company.url)
+        # print(len(companies))
+    def testAlisite(self):
+        from sites.ali.mainpage import AliSite
+        ali = AliSite()
+        for pageitem in ali.webPage.validSearchItems:
+            print(pageitem)
+        print(ali.webPage.postKeywords)
+
 unittest.main()
