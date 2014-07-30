@@ -1,4 +1,4 @@
-# -*- coding:gb2312 -*-
+# -*- coding:utf-8-*-
 
 
 class Company(object):
@@ -22,44 +22,52 @@ class CompanyParser(object):
         return self.companies
 
 
+class WebPage(object):
+    def __init__(self, url):
+        self.pageName = ''
+        self.url = url
+        self.validSearchItems = []
+        self.parser = None
+
+
 import urllib.request as request
-import urllib.parse as parse
-import string
+
+from bs4 import BeautifulSoup
 import re
-import os
-import urllib.error as error
 
 
-def baidu_tieba(url, begin_page, end_page):
-    count = 1
-    for i in range(begin_page, end_page + 1):
-        sName = 'c:/test/'+str(i).zfill(5)+'.html'
-        m = request.urlopen(url+str(i)).read()
-        dirpath = 'c:/test/'
-        dirname = str(i)
-        new_path = os.path.join(dirpath, dirname)
-        if not os.path.isdir(new_path):
-            os.makedirs(new_path)
-        page_data = m.decode('GBK')
-        page_image = re.compile('<img src=\"(.+?)\"')
-        for image in page_image.findall(page_data):
-            pattern = re.compile(r'^http://.*.png$')
-            if pattern.match(image):
-                try:
-                    image_data = request.urlopen(image).read()
-                    image_path = dirpath + dirname + '/' + str(count) + '.png'
-                    count += 1
-                    print(image_path)
-                    with open(image_path, 'wb') as image_file:
-                        image_file.write(image_data)
-                    image_file.close()
-                except error.URLError as e:
-                    print('Download failed')
-        with open(sName,'wb') as file:
-            file.write(m)
-        file.close()
-if __name__ == "__main__":
-    url = "http://tieba.baidu.com/p/"
-    begin_page = 1
-    end_page = 3
-    baidu_tieba(url, begin_page, end_page)
+def matchAUrl(text):
+    urlpatern = '.*(http.+htm)'
+    return re.match(urlpatern, text).group(1)
+    
+
+def taobao_main(url):
+    response = request.urlopen(url)
+    html = response.read()
+    data = html.decode('gbk').encode('utf-8')
+    soup = BeautifulSoup(data)
+    webPage = WebPage(url)
+    webPage.pageName = 'taobao'
+    for list in soup.find_all('form'):
+        for itemli in list.find_all('li'):
+            dataConf = itemli.get('data-config')
+            item = itemli.find('a')
+            webPage.validSearchItems.append((item.string, matchAUrl(dataConf)))
+        break
+
+    print(str(webPage.validSearchItems))
+
+if __name__ == '__main__':
+    import sys
+    if '../' not in sys.path:
+        sys.path.append('../')
+    from common.commandline import CommandLine
+
+    # url = 'http://www.taobao.com/?spm=a310q.2219005.1581860521.1.b9kUd4'
+    cmdline = CommandLine()
+    args, _ = cmdline.parseCmdLine()
+    print(args.product)
+
+    url = 'http://www.1688.com'
+    # taobao_main(url)
+    # .*(http.+htm)
