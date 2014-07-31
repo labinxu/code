@@ -27,20 +27,26 @@ class TCompanyFromProduct(unittest.TestCase):
 
     def testCompanyFromProduct(self):
         url = 'http://s.1688.com/selloffer/offer_search.htm'
-        postdata = {'keywords': 'keyboard'}
+        s = '键盘'
+        postdata = {'keywords': s.encode('gbk')}
+        print(postdata)
         companyfrom = CompanyFromProduct(url, postdata)
         res = companyfrom.getCompanies()
         print(len(res))
-        for company in res:
-            print(company.name)
-            print(company.url)
-            print(company.contactPerson)
+        f = open('contacts.txt', 'w')
+        for company in res.values():
+            f.write(company.name)
+            f.write(company.url)
+            f.write(company.contactPerson)
+            f.write(company.mobilePhone)
+            f.write(company.phoneNumber)
+        f.close()
 
-    # def testMoreDetail(self):
-    #     company = Company()
-    #     company.url = 'http://shop1355395132054.1688.com'
-    #     companyfrom = CompanyFromProduct(None, None)
-    #     companyfrom.getDetails(company)
+    def testMoreDetail(self):
+        company = Company()
+        company.url = 'http://shop1355395132054.1688.com'
+        companyfrom = CompanyFromProduct(None, None)
+        companyfrom.getDetails(company)
 
     def testParSefile(self):
         f = open('test.html', 'r')
@@ -57,14 +63,13 @@ class TCompanyFromProduct(unittest.TestCase):
                 company.url = sub.get('href')
                 companies.append(company)
 
-        # for company in companies:
-        #     print(company.name, company.url)
-        # print(len(companies))
+        for company in companies:
+            print(company.name, company.url)
+        print(len(companies))
     def testAlisite(self):
         from sites.ali.mainpage import AliSite
         ali = AliSite()
-        # for pageitem in ali.webPage.validSearchItems:
-        #     print(pageitem)
-        # print(ali.webPage.postKeywords)
-
+        for pageitem in ali.webPage.validSearchItems:
+            print(pageitem)
+        print(ali.webPage.postKeywords)
 unittest.main()

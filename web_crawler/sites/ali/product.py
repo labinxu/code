@@ -38,8 +38,8 @@ class CompanyFromProduct(object):
     def __getBeautifulObj(self, url):
         if not url:
             return None
-        debug.output('Parsing %s' % url)
         response = request.urlopen(url)
+        debug.output('parsing %s' % url)
         html = response.read()
         data = html.decode('gbk', 'ignore').replace('&nbsp', '')
         data = data.encode('utf-8')
@@ -58,26 +58,29 @@ class CompanyFromProduct(object):
     def getFirstPage(self):
         postdata = parse.urlencode(self.keyWords)
         postdata = postdata.encode(encoding='utf-8')
+        debug.output('open %s' % postdata)
         req = request.Request(url=self.url, data=postdata)
-        debug.output('Parsing %s' % req)
         result = request.urlopen(req).read()
         result = result.decode('gbk', 'ignore').encode('utf-8')
         page = BeautifulSoup(result)
         numberOfPage = self.getNumberOfPages(page)
-        debug.output('max page is %d' % numberOfPage)
         return (page, numberOfPage)
+
+    def __getCertifacteUrl(self, page):
+        keys = ["certificate-ptp ", 'certificate-etp ', 'certificate ']
+        for key in keys:
+            moreDetail = page.find('a',
+                                   attrs={'class': key})
+            if moreDetail:
+                break
+
+        return moreDetail.get('href')
 
     def getDetails(self, company):
         assert(company is not None)
         try:
             detailPage = self.__getBeautifulObj(company.url)
-            moreDetail = detailPage.find('a',
-                                         attrs={'class': 'certificate-etp '})
-            if not moreDetail:
-                moreDetail = detailPage.find('a',
-                                             attrs={'class': 'certificate '})
-       
-            moreDetailUrl = moreDetail.get('href')
+            moreDetailUrl = self.__getCertifacteUrl(detailPage)
             moreDetail = self.__getBeautifulObj(moreDetailUrl)
             # get contactperson
             attrs = {'id': 'memberinfo'}
@@ -88,9 +91,9 @@ class CompanyFromProduct(object):
                 title, var = content.text.replace(';', '').split('：')
                 company.setInfo(title, var)
         except UnicodeEncodeError as e:
-            debug.error(str(e))
+            debug.error('%s' % str(e))
         except AttributeError as e:
-            debug.error(str(e))
+            debug.error('AttributeError %s' % str(e))
         return company
 
     def getNextPage(self, page):
@@ -101,7 +104,7 @@ class CompanyFromProduct(object):
         item = page.find('a', attrs=attrs)
         if item:
             nexpage = item.get('href')
-            return self.__getbeautifulObj(nexpage)
+            return self.__getBeautifulObj(nexpage)
 
     def getCompanies(self):
         page, max_page = self.getFirstPage()
@@ -121,7 +124,7 @@ class CompanyFromProduct(object):
             for sub in item.find_all('a', attrs=itemattrs):
                 company = Company()
                 company.name = sub.string.replace('\n', '')
-                company.url = sub.get('href')
+                company.url = sub.get('href').replace('\n', '')
                 company = self.getDetails(company)
                 self.companies[company.name] = company
         return self.companies
