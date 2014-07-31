@@ -6,9 +6,19 @@ class Company(object):
         self.name = ''
         self.address = ''
         self.phoneNumber = ''
+        self.mobilePhone = ''
         self.detail = ''
-        self.personToContact = ''
+        self.contactPerson = ''
         self.url = ''
+
+    def setInfo(self, title, var):
+        if '联系人' in title:
+            self.contactPerson = var
+        elif '联系电话' in title:
+            self.mobilePhone = var
+        elif '固定电话' in title:
+            self.phoneNumber = var
+
 
 class CompanyParser(object):
     def __init__(self, webData):

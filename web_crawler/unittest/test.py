@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-url = 'http://s.1688.com/selloffer/offer_search.htm'
-postdata = {'keywords': 'keyboard'}
+
 ####################################################################
 # postdata = parse.urlencode(postdata)                             #
 # postdata = postdata.encode(encoding='UTF8')                      #
@@ -27,12 +26,21 @@ class TCompanyFromProduct(unittest.TestCase):
         pass
 
     def testCompanyFromProduct(self):
+        url = 'http://s.1688.com/selloffer/offer_search.htm'
+        postdata = {'keywords': 'keyboard'}
         companyfrom = CompanyFromProduct(url, postdata)
         res = companyfrom.getCompanies()
         print(len(res))
-        # for company in res:
-        #     print(company.name)
-        #     print(company.url)
+        for company in res:
+            print(company.name)
+            print(company.url)
+            print(company.contactPerson)
+
+    # def testMoreDetail(self):
+    #     company = Company()
+    #     company.url = 'http://shop1355395132054.1688.com'
+    #     companyfrom = CompanyFromProduct(None, None)
+    #     companyfrom.getDetails(company)
 
     def testParSefile(self):
         f = open('test.html', 'r')
@@ -55,8 +63,8 @@ class TCompanyFromProduct(unittest.TestCase):
     def testAlisite(self):
         from sites.ali.mainpage import AliSite
         ali = AliSite()
-        for pageitem in ali.webPage.validSearchItems:
-            print(pageitem)
-        print(ali.webPage.postKeywords)
+        # for pageitem in ali.webPage.validSearchItems:
+        #     print(pageitem)
+        # print(ali.webPage.postKeywords)
 
 unittest.main()
