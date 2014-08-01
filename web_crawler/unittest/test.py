@@ -1,71 +1,87 @@
 # -*- coding: utf-8 -*-
 import unittest
-
-
-####################################################################
-# postdata = parse.urlencode(postdata)                             #
-# postdata = postdata.encode(encoding='UTF8')                      #
-# req = request.Request(url=url, data=postdata)                    #
-# data = request.urlopen(req).read().decode('gbk').encode('utf-8') #
-#                                                                  #
-# data.decode('utf-8')                                             #
-####################################################################
-
-
 import sys
 if '../' not in sys.path:
     sys.path.append('../')
-
-from bs4 import BeautifulSoup
 from typesdefine.data_types import Company
-from sites.ali.product import CompanyFromProduct
 
 
 class TCompanyFromProduct(unittest.TestCase):
     def setUp(self):
-        pass
+        self.company = Company()
 
     def testCompanyFromProduct(self):
+        from sites.ali.product import CompanyFromProduct
         url = 'http://s.1688.com/selloffer/offer_search.htm'
         s = '键盘'
         postdata = {'keywords': s.encode('gbk')}
-        print(postdata)
         companyfrom = CompanyFromProduct(url, postdata)
         res = companyfrom.getCompanies()
-        print(len(res))
-        f = open('contacts.txt', 'w')
-        for company in res.values():
-            f.write(company.name)
-            f.write(company.url)
-            f.write(company.contactPerson)
-            f.write(company.mobilePhone)
-            f.write(company.phoneNumber)
-        f.close()
+        for company in res:
+            print('=============================')
+            company.contactInfo.displayAttributes()
+
+    def testCompanyPageParser(self):
+        from sites.companypage import CompanyPageParser
+        from sites.certificatepage import CertifiactePageParser
+        from sites.yellowpage import YellowPageParser
+
+        pageParser = CompanyPageParser('http://shop1355395132054.1688.com')
+        dest = 'http://shop1355395132054.1688.com/page/creditdetail.htm#certifyInfo'
+        self.assertEqual(dest, pageParser.getCertifyInfoUrl())
+        pageParser = CertifiactePageParser(pageParser.getCertifyInfoUrl())
+        dest = 'http://exodus.1688.com/company/detail/jeqang8.html?fromSite=company_site&tracelog=gsda_huangye'
+        self.assertEqual(dest, pageParser.getYellowPageUrl())
+        pageParser = YellowPageParser(pageParser.getYellowPageUrl())
+        # print(pageParser.getBaseInfoUrl())
+        # print(pageParser.getContactInfoUrl())
+        # print(pageParser.getOperateStatusUrl())
+        
+    def testContactPage(self):
+        print('test Contact page')
+        url = 'http://www.1688.com/company/jeqang8.html?fromSite=company_site&tab=companyWeb_contact'
+        from sites.contactpage import ContactInfoPageParser
+
+        pageParser = ContactInfoPageParser(url)
+        # pageParser.getContactInfo().displayAttributes()
 
     def testMoreDetail(self):
-        company = Company()
-        company.url = 'http://shop1355395132054.1688.com'
+        self.company.url = 'http://shop1355395132054.1688.com'
+        from sites.ali.product import CompanyFromProduct
         companyfrom = CompanyFromProduct(None, None)
-        companyfrom.getDetails(company)
+        companyfrom.getDetails(self.company).contactInfo.displayAttributes()
 
-    def testParSefile(self):
-        f = open('test.html', 'r')
-        result = f.read()
-        f.close()
-        page = BeautifulSoup(result)
-        companies = []
-        attrs = {'class': 'sm-offerShopwindow-company fd-clr'}
-        subattrs = {'class': 'sm-previewCompany sw-mod-previewCompanyInfo'}
-        for item in page.find_all('div', attrs=attrs):
-            for sub in item.find_all('a', attrs=subattrs):
-                company = Company()
-                company.name = sub.string.replace('\n', '')
-                company.url = sub.get('href')
-                companies.append(company)
+    def testClawerThread(self):
+        url = 'http://www.1688.com/company/jeqang8.html?fromSite=company_site&tab=companyWeb_contact'
+        from sites.contactpage import ContactInfoPageParser
+        pageParser = ContactInfoPageParser(url)
+        from utils.utils import Crawler
+        crawler = Crawler(pageParser.getContactInfo)
+        crawler.start()
+        crawler.join(10)
+        print('main thread')
+        crawler.result.displayAttributes()
 
-        for company in companies:
-            print(company.name, company.url)
-        print(len(companies))
+    # def testParSefile(self):
+    #     f = open('test.html', 'r')
+    #     result = f.read()
+    #     f.close()
+    #     page = BeautifulSoup(result)
+    #     companies = []
+    #     attrs = {'class': 'sm-offerShopwindow-company fd-clr'}
+    #     subattrs = {'class': 'sm-previewCompany sw-mod-previewCompanyInfo'}
+    #     for item in page.find_all('div', attrs=attrs):
+    #         for sub in item.find_all('a', attrs=subattrs):
+    #             company = Company()
+    #             company.name = sub.string.replace('\n', '')
+    #             company.url = sub.get('href')
+    #             companies.append(company)
+
+    #     for company in companies:
+    #         # print(company.name, company.url)
+    #         pass
+    #     print(len(companies))
+
     def testAlisite(self):
         from sites.ali.mainpage import AliSite
         ali = AliSite()
