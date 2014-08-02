@@ -1,42 +1,63 @@
+# coding -*- utf-8 _8-
+
+import glob
 import os
 import zipfile
 import subprocess
 import time
-import sys
-import threading
 import shutil
 import junit_parser
+import datetime
+from threading import Timer
+# modules in same folder
+from commandline import CommandLine
+from adbcommander import AdbCommander
 
 
 class Debug():
-
+    '''
+    Debug info print and write the log into files
+    '''
     def __init__(self, logger=None, level=2):
         self.level = level
         self.logger = logger
 
+    def formatLog(self, msg):
+        '''
+        Insert the time into line
+        '''
+        timeprefix = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
+        return '[%s]%s' % (timeprefix, msg)
+
+    def __call__(self, msg):
+        self.debug(self.formatLog(msg))
+
     def debug(self, msg):
+        msg = self.formatLog(msg)
         if self.level >= 3:
-            print "Tool: Debug %s" % msg
+            print "Tool:Debug %s" % msg
         if self.logger:
-            self.logger.writeLine(msg)
+            self.logger.append(msg)
 
     def info(self, msg):
+        msg = self.formatLog(msg)
         if self.level >= 2:
-            print "Tool: Info %s" % msg
+            print "Tool:Info %s" % msg
         if self.logger:
-            self.logger.writeLine(msg)
+            self.logger.append(msg)
 
     def error(self, msg):
+        msg = self.formatLog(msg)
         if self.level >= 1:
-            print "Tool: Error %s" % msg
+            print "Tool:Error %s" % msg
         if self.logger:
-            self.logger.writeLine(msg)
+            self.logger.append(msg)
 
     def output(self, msg):
-        print 'Tool: %s' % msg
+        msg = self.formatLog(msg)
+        print 'Tool:%s' % msg
         if self.logger:
-            self.logger.writeLine(msg)
-
+            self.logger.append(msg)
 debug = Debug(level=3)
 
 
@@ -49,14 +70,20 @@ class IcaseLogger(object):
 
     def __init__(self, logfile):
         self.logfile = logfile
+        logfile = os.path.abspath(logfile)
         if os.path.exists(logfile):
             self.log = open(logfile, 'a')
         else:
-            print os.path.abspath(logfile)
             self.log = open(logfile, 'w')
 
-    def writeLine(self, msg):
-        self.log.write(msg)
+    def append(self, msg):
+        if len(msg) == 0:
+            return
+        if msg[-1] != '\n':
+            self.log.write('%s\n' % msg)
+        else:
+            self.log.write(msg)
+
         self.log.flush()
 
 
@@ -64,130 +91,77 @@ class Executor(object):
     def __init__(self, debug=None):
         self.debug = debug
 
+    def executeWithOutput(self, command, timeout=None):
+        proc = subprocess.Popen(command,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        timer = None
+        if timeout:
+            self.debug.info('add timer %s' % str(timeout))
+            kill_proc = lambda p: p.kill()
+            timer = Timer(timeout, kill_proc)
+            timer.start()
+        stdoutdata, stderrdata = proc.communicate()
+        if timer:
+            timer.cancel()
+            self.debug.output('cancel timer')
+
+        return (stdoutdata, stderrdata)
+
+    def setDebuger(self, debuger):
+        self.debug = debuger
+
     def execute(self, command, timeout=None):
+
+        self.debug.output('Execute %s' % command)
         proc = subprocess.Popen(command,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
         status = None
+        t_beginning = time.time()
         while True:
             msg = proc.stdout.readline()
-            time.sleep(1)
             status = proc.poll()
             if msg == '' and status is not None:
                 break
-            self.debug.output(msg)
-
-            if timeout is not None:
-                timeout -= 1
-                if timeout <= 0:
-                    self.debug.error('cmd %s timout' % command)
-                    break
-
+            if msg != '':
+                self.debug.output(msg)
+            seconds_passed = time.time() - t_beginning
+            if timeout and seconds_passed > timeout:
+                self.debug.error('%s timeout' % command)
+                break
         if status is None:
             # the process not finished
             status = proc.kill()
-            self.debug.error('cmd %s failed' % command)
+            self.debug.error('%s failed' % command)
         elif status == 0:
-            self.debug.output('cmd %s successful' % command)
-
+            self.debug.output('%s successful' % command)
+        else:
+            self.debug.error('%s error' % command)
+        time.sleep(1)
         return status
 
 
-class Flasher(object):
-    """The flash command inclued
-    """
+class ExecuteException(Exception):
+    '''
+    Self exception class
+    '''
 
-    def __init__(self, utilsHelper, productSN):
-        self.utilsHelper = utilsHelper
-        self.productSN = productSN
-        self.beginFlash = 'adb -s %s reboot bootloader' % self.productSN
-        self.reboot = 'fastboot -s %s reboot' % self.productSN
-        self.flashCmds = []
-        self.flashCmds.append(('modem', '*Non-HLOS.bin'))
-        self.flashCmds.append(('sbl1', '*sbl1'))
-        self.flashCmds.append(('sbl1bak', '*sbl1'))
-        self.flashCmds.append(('rpm', '*rpm.mbn'))
-        self.flashCmds.append(('rpmbak', '*rpm.mbn'))
-        self.flashCmds.append(('tz', '*tz.mbn'))
-        self.flashCmds.append(('tzbak', '*tz.mbn'))
-        self.flashCmds.append(('aboot', '*emmc_appsboot.mbn'))
-        self.flashCmds.append(('abootbak', '*emmc_appsboot.mbn'))
-        self.flashCmds.append(('boot', '*boot.img'))
-        self.flashCmds.append(('system', '*system.img'))
-        self.flashCmds.append(('cache', '*cache.img'))
-        self.flashCmds.append(('userdata', '*userdata.img'))
-        self.flashCmds.append(('recovery', '*recovery.img'))
-        # self.flashCmds.append(('custom', '*custom.img'))
-        self.flashCmds.append(('custom', self.getCustomImg()))
-
-        self.flashCmds.append(('sdi', '*sdi.mbn'))
-
-    def startflash(self):
-        utilsHelper.startProcess(self.beginFlash)
-
-    def getCustomImg(self):
-        import glob
-        coustom = glob.glob('rm*.*custom.img')
-        assert len(coustom) > 1
-        print len(coustom)
-        return coustom[0]
-
-    def flash(self, steptimeout=None, totalTimeout=None):
-        # self.utilsHelper.runCommand()
-        self.startflash()
-
-        for partion, arg in self.flashCmds:
-            tmpparam = (self.productSN, partion, arg)
-            if partion == 'system':
-                cmd = 'fastboot -s %s -S 200M flash %s %s' % tmpparam
-            else:
-                cmd = 'fastboot -s %s flash %s %s' % tmpparam
-            if self.utilsHelper.startProcess(cmd) != 0:
-                pass
-        self.endFlash()
-
-    def endFlash(self):
-        utilsHelper.startProcess(self.reboot)
-
-
-class CommandWatchCat(threading.Thread):
-    def __init__(self, popen, timeout):
-        threading.Thread.__init__(self)
-        self.popen = popen
-        self.timeout = timeout
-
-    def run(self):
-
-        tmptimeout = self.timeout
-        status = self.popen.poll()
-        while tmptimeout is not 0 and status is None:
-            tmptimeout -= 1
-            time.sleep(1)
-            status = self.popen.poll()
-
-        status = self.popen.poll()
-        if status is None:
-            self.popen.kill()
-            print 'kill process reason timeout'
-            # wait the process return
-            tmptimeout = self.timeout
-            while status is None and tmptimeout is not 0:
-                time.sleep(1)
-                tmptimeout -= 1
-                self.popen.kill()
-                status = self.popen.poll()
-
-
-class ExecuteException():
     def __init__(self, msg=""):
         self.msg = msg
 
     def what(self):
+        '''
+        Return exception content
+        '''
         return self.msg
 
 
 class UtilsHelper():
-
+    '''
+    A single class contain flasher debug executor instance
+    and provide interface to get it
+    '''
     def __init__(self):
         self.testMode = False
         import platform
@@ -195,18 +169,156 @@ class UtilsHelper():
             self.isWindows = True
         else:
             self.isWindows = False
-
         self.workspace = os.path.abspath(os.getcwd())
         self.resultName = None
         self.executeStates = 0
+        self.debug = Debug()
+        self.executor = Executor(self.debug)
+        self.wait_for_device = 'adb -s %s wait-for-device'
+        self.dumpsys_window = 'adb -s %s shell dumpsys window'
+        if not os.path.exists('results'):
+            os.makedirs('results')
 
-        self.logger = IcaseLogger('./results/icase.log')
-        self.debug = Debug(self.logger)
-        self.executor = Executor(debug)
+        self.commandLine = CommandLine(self)
+        self.adbCommander = AdbCommander(self)
+
+    def parseCmdLine(self):
+        '''
+        Get the command line from command input
+        '''
+        return self.commandLine.parseCmdLine()
+
+    def getDevices(self, devicesJson):
+        '''
+        Get the device info from devices.json file
+        '''
+        import jsondata
+        deviceparser = jsondata.DeviceParser(self, devicesJson)
+        return deviceparser.getDevices()
+
+    def getFlashArgs(self, cmdline):
+        '''
+        Retieve the flash args
+        '''
+        return self.commandLine.getFlashArgs(cmdline)
+
+    def copyDeltaConfig(self):
+        '''
+        copy deltaConsoleFlash tools config file from
+        path DELTA_FLASH to current directory
+        '''
+
+        deltaflashdir = os.environ.get('DELTA_FLASH')
+        if deltaflashdir:
+            self.debug.info(deltaflashdir)
+            deltaflashdir = os.path.join(deltaflashdir, 'config.xml')
+            if os.path.exists(deltaflashdir) and \
+               not os.path.exists('config.xml'):
+                shutil.copy(deltaflashdir, 'config.xml')
+                return True
+            else:
+                self.debug.error("%s not found" % deltaflashdir)
+        else:
+            self.debug.error('DELTA_FLASH not found')
+        return False
+
+    def getDeviceDeltaType(self, product):
+        '''
+        Retieve the product type according the product anme
+        '''
+        deviceType = 'geminiplus'
+        if product.productname in 'ara':
+            deviceType = 'gemini'
+        elif product.productname in 'athena':
+            deviceType = 'geminiplus'
+        else:
+            deviceType = 'lyra'
+        return deviceType
+
+    def pingDevice(self, product):
+        '''
+        Send data to phone ,if the phone start normal
+        it will response
+        '''
+        param = '00,00,10,15,00,06,00,00,00,02,00,00'
+        self.debug.info('ping devie...')
+        ping = 'DeltaConsoleFlasher send -s \
+%s -i %s -e %s' % (param, product.imei, self.getDeviceDeltaType(product))
+
+        success = 'RX:'
+        counter = 30
+        while counter > 0:
+            stdout, _ = self.startProcessWithOutput(ping)
+            if success in stdout:
+                self.debug.info(stdout)
+                return True
+            else:
+                counter -= 1
+                time.sleep(10)
+        return False
+
+    def activeUsb(self, product):
+        '''
+        Make the use debug mode active
+        '''
+        param = '00,00,10,1b,00,06,00,01,04,35,00,00'
+        active_usb = 'DeltaConsoleFlasher send -s \
+%s -i %s -e %s' % (param, product.imei, self.getDeviceDeltaType(product))
+        stdout, _ = self.startProcessWithOutput(active_usb)
+        success = 'RX:'
+        if success in stdout:
+            self.debug.info(stdout)
+            return True
+        else:
+            return False
+
+    def getFlasher(self, product, flashTool='fastboot'):
+        '''
+        Retrieve the flash tool according to param flashtool
+        '''
+        from flasher import AdbFlasher, DeltaFlasher
+        if 'fastboot' in flashTool:
+            self.flasher = AdbFlasher(self, product)
+        elif 'delta' in flashTool:
+            self.flasher = DeltaFlasher(self, product)
+        else:
+            self.flasher = AdbFlasher(self, product)
+        self.copyDeltaConfig()
+        return self.flasher
+
+    def findFirstFile(self, filereg):
+        '''
+        Retrieve the files use glob module
+        '''
+
+        self.debug('finding file %s' % filereg)
+        files = glob.glob(filereg)
+        retfile = ''
+        if len(files) == 0:
+            self.debug.info('%s not found' % filereg)
+            return None
+        else:
+            retfile = files[0]
+            self.debug.info('find file %s' % retfile)
+
+        return retfile
+
+    def waitSystemStart(self, product, timeout=90):
+        '''
+        Wait the phone startup ,using dumpsys window command
+        '''
+        self.debug.output('waiting system starting...')
+        ret = self.adbCommander.exceptSystemBooted(product)
+        if ret:
+            time.sleep(timeout)
+        return ret
 
     def setLogger(self, logger):
-        self.logger = logger
-        self.debug.logger = self.logger
+        if not self.debug:
+            self.debug = Debug(logger)
+        else:
+            self.debug.logger = logger
+        self.executor.setDebuger(self.debug)
 
     def getLastError(self):
         return self.executeStates
@@ -214,15 +326,22 @@ class UtilsHelper():
     def debug(self, msg):
         self.debug.debug(msg)
 
+    def startProcessWithOutput(self, command, timeout=None, report=True):
+        if report:
+            self.debug.output(command)
+
+        return self.executor.executeWithOutput(command, timeout=timeout)
+
     def startProcess(self, command, timeout=None):
-        if self.testMode:
-            print 'cmd:', command
-            return 0
-        else:
-            self.executeStates = self.executor.execute(command, timeout)
-            return self.executeStates
+        self.executeStates = self.executor.execute(command, timeout)
+        return self.executeStates
 
     def raiseException(self, msg=None):
+        '''
+        '''
+        if os.path.exists('./results'):
+            with open('./results/error.log', 'w') as f:
+                f.write(msg)
         raise ExecuteException(msg)
 
     def getDataFromInfofile(self, file):
@@ -301,195 +420,90 @@ class UtilsHelper():
                 desdir = os.path.abspath(dest)
                 print 'copy %s to %s' % (srcdir, desdir)
 
-    def runCommand2(self, command, timeout=None):
-
-        self.executeStates = 0
-        try:
-            print 'run %s' % command
-            tool = subprocess.Popen(command,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-            # create a command watch cat
-            if timeout:
-                CommandWatchCat(tool, timeout=timeout).start()
-            toolOutputs = tool.stdout
-            while 1:
-                outputFromTool = toolOutputs.readline()
-                time.sleep(1/10)
-                if not outputFromTool:
-                    break
-                print 'Tool: ' + outputFromTool
-            self.executeStates = tool.wait()
-            print 'process return %d' % self.executeStates
-        except OSError, e:
-            print 'An error occured during execution: ', e
-        sys.stdout = sys.__stdout__
-        return self.executeStates
-
-    def waitDeviceStart(self, logger, sn):
-        debug.debug('wait for device startup')
-        cmd = 'adb -s %s wait-for-device' % sn
-        utilsHelper.runCommand2(cmd, timeout=300)
-        cmd = 'adb -s %s shell dumpsys window' % sn
-        counter = 12
-        debug.debug('checking phone status...')
-        while counter > 0:
-            counter -= 1
-            try:
-                params = 'SystemBooted=true'
-                (states, ret) = utilsHelper.runCommandAndExcept(cmd, params)
-                print 'states', states
-                if ret:
-                    debug.debug('start up')
-                    return True
-                time.sleep(10)
-            except Exception, e:
-                debug.error(e)
-        return False
-
-    def runCommandAndExcept(self, command, exceptstr=None):
-        try:
-            findstr = False
-            print 'run %s' % command
-            tool = subprocess.Popen(command,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-            toolOutputs = tool.stdout
-            while 1:
-                outputFromTool = toolOutputs.readline()
-                time.sleep(1)
-                if not outputFromTool:
-                    break
-
-                if exceptstr and exceptstr in outputFromTool:
-                    findstr = True
-                    break
-                print 'Tool: ' + outputFromTool
-        except Exception, e:
-            debug.error(e)
-
-        return (self.executeStates, findstr)
-
-    def runCommand(self, logger, command,
-                   timeout=None,
-                   interval=None,
-                   repeat=3,
-                   report=True):
-
-        self.executeStates = 0
-        assert repeat is not 0
-
-        try:
-            counter = repeat
-            while(counter > 0):
-                print 'run %s' % command
-                tool = subprocess.Popen(command,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT)
-                # create a command watch cat
-                if timeout:
-                    CommandWatchCat(tool, timeout=timeout).start()
-                    if not interval:
-                        interval = timeout / repeat
-                toolOutputs = tool.stdout
-                while 1:
-                    outputFromTool = toolOutputs.readline()
-                    time.sleep(0.5)
-                    if not outputFromTool:
-                        break
-                    if report:
-                        print 'Tool: ' + outputFromTool
-                    logger.append(outputFromTool)
-                self.executeStates = tool.wait()
-                print 'process return %d,counter %d' %\
-                    (self.executeStates, counter)
-                if self.executeStates != 0 and timeout:
-                    print 'Tool: command %s faild try it after %s' %\
-                        (command, str(interval))
-                    counter -= 1
-                    time.sleep(interval)
-                else:
-                    print 'Tool: command %s finished' % command
-                    counter = 0
-
-                sys.stdout = sys.__stdout__
-        except OSError, e:
-            sys.stdout = sys.__stdout__
-            print 'An error occured during execution: ', e
-        return self.executeStates
+    def runCommand(self, logger, command, timeout=None):
+        self.setLogger(logger)
+        return self.executor.execute(command, timeout=timeout)
 
     def setWorkspace(self, new_workspace):
         self.workspace = new_workspace
 
-    def SwitchPhoneLanguage(self, logger, product, language, country):
-        print 'switch phone language to %s and country to %s' %\
-            (language, country)
-        cmd = 'adb -s %s root' % product.sn
-        self.runCommand(logger, cmd, timeout=30)
-        cmd = 'adb -s %s wait-for-device' % product.sn
-        self.runCommand(logger, cmd, timeout=30)
-        cmd = 'adb -s %s shell setprop persist.sys.language %s' %\
-              (product.sn, language)
-        self.runCommand(logger, cmd, timeout=30)
-        cmd = 'adb -s %s shell setprop persist.sys.country %s' %\
-              (product.sn, country)
-        self.runCommand(logger, cmd, timeout=30)
-        cmd = 'adb -s %s shell rm -rf /data/data/com.nokia.homescreen/databases/launcher_menu.db' % product.sn
-        self.runCommand(logger, cmd, timeout=30)
-        cmd = 'adb -s %s shell rm -rf /data/data/com.nokia.homescreen/databases/launcher_menu.db-journal' % product.sn
-        self.runCommand(logger, cmd, timeout=30)
-        cmd = 'adb -s %s reboot' % product.sn
-        self.runCommand(logger, cmd, timeout=30)
-        print 'set finished and reboot'
-        cmd = 'adb -s %s wait-for-device' % product.sn
-        self.runCommand(logger, cmd, timeout=300)
-        print 'device is online again'
-        if not self.waitDeviceStart(logger, product.sn):
-            debug.info('startup timeout reboot and wait again')
-            cmd = 'adb -s %s reboot' % product.sn
-            self.runCommand(logger, cmd, timeout=30)
-            if not self.waitDeviceStart(logger, product.sn):
-                self.raiseException('phone can not startup')
+    def checkLanguage(self, product, language):
+        result = self.adbCommander.getLanguage(product)
+        if language in result:
+            self.debug.info('switch language successful')
+            return True
+        else:
+            self.debug.error('switch language failed')
+            return False
 
-        print 'reboot finished'
+    def switchLanguage(self, product, language, country):
+        self.adbCommander.switchLanguage(product, language, country)
+
+    def rebootTarget(self, product):
+        self.adbCommander.reboot(product)
+        time.sleep(10)
+        self.adbCommander.waitForDevice(product)
+        if not self.waitSystemStart(product):
+            return False
+        return True
+
+    def setSreenTimeout(self, product, timeout='1800000'):
+
+        return self.adbCommander.setSreenTimeout(product, timeout)
+
+    def disableFirstTimeUse(self, product):
+        return self.adbCommander.disableFirstTimeUse(product)
 
     def installTesthelper(self, product):
-        print 'Enter install test helper'
-        directory = os.path.join(self.workspace, 'utils', 'TestHelpers.jar')
-        if os.path.exists(os.path.join(self.workspace, 'utils',
-                                       'TestHelpers.jar')):
+        self.debug.info('Enter install test helper')
+        directory = './utils/TestHelpers.jar'
+        if os.path.exists(directory):
+            return self.adbCommander.push(product, directory,
+                                          '/data/local/tmp')
+        else:
+            self.debug.error('%s not exist' % directory)
 
-            if not os.path.exists('results'):
-                os.makedirs('results')
+    def setSimOnline(self, product):
 
-            logger = Logger('results', 'flash.log')
+        securityCode = self.getSecurityCode(product.productname)
 
-            cmd = 'adb -s %s push %s /data/local/tmp' % (product.sn, directory)
-            self.runCommand(logger, cmd, timeout=30)
+        cmd = 'adb -s %s shell uiautomator runtest TestHelpers.jar -c \
+com.testhelpers.DeviceUnlock -e securitycodes %s' % (product.sn, securityCode)
+        self.executor.execute(cmd, timeout=30)
+        time.sleep(5)
 
-            cmd = 'adb -s %s shell pm disable com.nokia.FirstTimeUse/com.nokia.FirstTimeUse.LanguageSelection'%product.sn
-            self.runCommand(logger, cmd, timeout=30)
-            cmd ='adb -s %s shell pm disable com.nokia.FirstTimeUse/com.nokia.FirstTimeUse.Warranty'%product.sn
-            self.runCommand(logger, cmd, timeout=30)
+        cmd = 'adb -s %s shell uiautomator runtest TestHelpers.jar -c \
+com.testhelpers.GetSIMsOnline#getDualSIMsOnline' % product.sn
 
-            cmd = 'adb -s %s root' % product.sn
-            self.runCommand(logger, cmd, timeout=30)
-            cmd = 'adb -s %s shell rm -rf /storage/sdcard1/*' % product.sn
-            self.runCommand(logger, cmd, timeout=30)
+        self.executor.execute(cmd, timeout=30)
+        time.sleep(5)
 
-            # =====run adb command to enable dual sim card==========
-            cmd = 'adb -s %s shell setprop persist.radio.multisim.config dsds'\
-                  % product.sn
-            if product.simcount == 2:
-                self.runCommand(logger, cmd)
+        cmd = 'adb -s %s shell uiautomator runtest TestHelpers.jar -c \
+com.testhelpers.GetSIMsOnline#setNetworkMode' % product.sn
+        self.executor.execute(cmd, timeout=30)
+        time.sleep(5)
 
-            self.SwitchPhoneLanguage(logger, product, 'en', 'US')
-            # cmd = 'adb -s %s shell uiautomator runtest TestHelpers.jar -c com.testhelpers.DeviceInitialization -e timeout 500' % product.sn
-            # self.runCommand(logger,cmd,timeout=500)
-        
+    def clearsdcard1(self, product):
+        cmd = 'adb -s %s root' % product.sn
+        self.executor.execute(cmd, timeout=30)
+
+        cmd = 'adb -s %s shell rm -rf /storage/sdcard1/*' % product.sn
+        self.executor.execute(cmd, timeout=30)
+
+    def simCardInit(self, product):
+        '''run adb command to enable dual sim card
+        '''
+        cmd = 'adb -s %s shell setprop \
+persist.radio.multisim.config dsds' % product.sn
+        if product.simcount == 2:
+            self.executor.execute(cmd, timeout=30)
+
     def unlockPhone(self, logger, product):
-        securityCode = self.getSecurityCode(product.productName)
-        cmd = 'adb -s %s shell uiautomator runtest TestHelpers.jar -c com.testhelpers.DeviceUnlock -e securitycodes %s' % (product.sn, securityCode)
+
+        securityCode = self.getSecurityCode(product.productname)
+
+        cmd = 'adb -s %s shell uiautomator runtest TestHelpers.jar -c \
+com.testhelpers.DeviceUnlock -e securitycodes %s' % (product.sn, securityCode)
         self.runCommand(logger, cmd, timeout=60)
 
     def addDirArchive(self, archiveName, startdir):
@@ -527,38 +541,7 @@ class UtilsHelper():
                 results.append(os.path.join(root, fn))
         return results
 
-    def parseCmdLine(self):
-                
-        import optparse
-        usage = "usage: %prog [options] arg"
-        parser = optparse.OptionParser(usage)
-        parser.add_option('-p', '--product', dest='product',
-                          help='contains product information')
-        parser.add_option('-f', '--flash', dest='flash',
-                          help='flash tool name and path')
-        
-        parser.add_option('-T', '--testtype', dest='testtype',
-                          help='type of the test eg: \
-marble,instrument,Monkey...')
-        
-        #marble params
-        parser.add_option('-A', '--marbletool',dest = 'marbletool',help ='marble tools name eg: ../marble.py')
-        parser.add_option('-t', '--testset', dest ='testset', help='test case configure contains test case')
-        
-        #instrument params
-        parser.add_option('-a', '--apk',dest = 'apk',help ='apk name')
-        parser.add_option('-k', '--package',dest = 'package',help ='package name')
-        parser.add_option('-e', '--testapk',dest = 'testapk',help ='testapk name')
-        parser.add_option('-c', '--testpackage',dest = 'testpackage',help ='testpackage name')
-        parser.add_option('-r', '--runner',dest = 'runner',help ='runner name')
-        
-        #Monkey command
-        parser.add_option('-O', '--Monkey', dest = 'Monkey', help = 'Monkey test')
-        
-        parser.add_option('-P', '--parameters',dest = 'parameters',help ='marble tools name eg: ../marble.py')
-        parser.add_option('-R' ,'--result',dest = 'result',help='result zip name')
-        return parser.parse_args()
-    
+
 utilsHelper = UtilsHelper()
 
 
@@ -579,71 +562,12 @@ class JunitParser(object):
         junit_parser.parse(destfile)
 
 
-class Logger:
-    def __init__(self, dir, logfile):
-        self.filename = logfile
-        self.logpath = os.path.abspath(os.path.join(dir, logfile))
-        if os.path.exists(self.logpath):
-            self.logfile = open(self.logpath, 'a')
-        else:
-            self.logfile = open(os.path.abspath(os.path.join(dir, logfile)),
-                                'w')
-        self.workspace = dir
-        self.zipResult = None
-
-    def append(self, log):
-        self.logfile.write(log)
-        self.logfile.flush()
-
-    def find(self, destStr):
-        with open(self.logpath, 'r') as f:
-            for line in f.readlines():
-                if destStr in line:
-                    return line
-        return None
-
-    def store(self, workspace, compressFileName, zipConstruct):
-        '''
-        for example:
-        workspace is : ./results/
-        compressFileName is :result.zip
-        the directory of result.zip is ../results
-        the result.zip's files construction is result.zip/Marble/marble.log
-        '''
-        # the zip file will up one level by results folder
-        resultzip = os.path.abspath(os.path.join(workspace, compressFileName))
-        print 'compressing test results to %s' % resultzip
-        with zipfile.ZipFile(resultzip, 'a') as myzip:
-            print 'adding %s/%s' % (zipConstruct, self.filename)
-            myzip.write(os.path.join(zipConstruct, self.filename))
-        self.zipResult = resultzip
-        self.logfile.close()
-
-    def addfile(self, zipConstruct, filename, resultzip=None):
-        '''
-        zipconstruct is the relative directory
-        about filename for current workspace
-        '''
-
-        if resultzip:
-            print 'add %s to %s' % (filename, resultzip)
-            with zipfile.ZipFile(resultzip, 'a') as myzip:
-                myzip.write(os.path.join(zipConstruct, filename))
-        elif self.zipResult:
-            print 'add %s to %s' % (os.path.join(zipConstruct, filename),
-                                    self.zipResult)
-            with zipfile.ZipFile(self.zipResult, 'a') as myzip:
-                myzip.write(os.path.join(zipConstruct, filename))
-        else:
-            print 'Please give the archive name'
-
-
 class JsonItem(object):
     def __init__(self):
         self.parameters = ""
         self.itemType = None
         self.itemName = None
-        
+
     def displayAttributes(self):
         for name, value in vars(self).items():
             print '%s = %s' % (name, value)
@@ -660,23 +584,10 @@ class TestTool(object):
         self.currentProduct = None
         # fixed securityCode will store in seccode.txt
         self.securityCode = ''
-        
-    def _store(self, logger):
-
-        logger.store(self.workspace, self.compressName,
-                     os.path.join(self.getResultdir(), self.name))
 
     def _parselog(self, destfile):
         junitparser = JunitParser()
         junitparser.parse(os.path.join(self.getResultdir(), destfile))
-
-    def appendToArchive(self, filename):
-        if self.resultzip:
-            print 'add %s to %s' % (filename, self.resultzip)
-            with zipfile.ZipFile(self.resultzip, 'a') as myzip:
-                myzip.write(os.path.join(self.getResultdir(), filename))
-        else:
-            print 'can not found zip file'
 
     def _run(self, logger, toolArguments):
 
@@ -694,7 +605,7 @@ class TestTool(object):
         if not os.path.exists(resultdirs):
             print 'make dirs %s' % resultdirs
             os.makedirs(resultdirs)
-        return Logger(resultdirs, self.logName)
+        return IcaseLogger(os.path.join(resultdirs, self.logName))
 
     def generatorLogfileName(self, testset):
         return "%s.log" % testset

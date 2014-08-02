@@ -275,8 +275,9 @@ def parseJUnitLogs(workspace):
     return mappedTests
 
 
-def createNJUnitReport(mappedTests,destFile):
+def createNJUnitReport(mappedTests, destFile):
     testSuites = ET.Element('testsuites')
+    testSuiteName = ''
     global TotalExeTime
     for key in mappedTests:
 
@@ -285,14 +286,17 @@ def createNJUnitReport(mappedTests,destFile):
         testSuiteName = key
         testSuite = ET.SubElement(testSuites, 'testsuite')
         testSuite.set('name', testSuiteName)
-        testSuite.set('time', str(TotalExeTime))
         for testCase in mappedTests[key]:
             testCaseElement = ET.SubElement(testSuite, 'testcase')
             testCaseElement.set('classname', testCase.getClassName())
-            testCaseElement.set('name', testCase.getName())
-            testCaseElement.set('start_time',testCase.getStarttime())
-            testCaseElement.set('stop_time',testCase.getEndtime())
-            testCaseElement.set('time',testCase.getRuntime())
+            name = testCase.getName()
+            if name:
+                testCaseElement.set('name', name)
+            else:
+                testCaseElement.set('name', testCase.getClassName())
+            testCaseElement.set('start_time', testCase.getStarttime())
+            testCaseElement.set('stop_time', testCase.getEndtime())
+            testCaseElement.set('time', testCase.getRuntime())
             result = testCase.getResult()
             if 'failed' in result:
                 failure = ET.SubElement(testCaseElement, 'failure')
@@ -302,6 +306,9 @@ def createNJUnitReport(mappedTests,destFile):
                 error = ET.SubElement(testCaseElement, 'failure')
                 error.set('details', testCase.getDetails())
                 error.set('message', 'Error')
+
+    testSuites.set('name', testSuiteName)
+    testSuites.set('time', str(TotalExeTime))
 
     tree = ET.ElementTree(testSuites)
     print 'write',destFile

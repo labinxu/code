@@ -1,90 +1,15 @@
 # coding -*- utf-8 _8-
-from utils.utils import Parse, utilsHelper, debug, JunitParser, Flasher
+from utils.utils import utilsHelper
+from utils.utils import JunitParser, IcaseLogger
 import importlib
 import json
 import os
 
 
 def getModule(modulename):
-    debug.debug('%s.run' % modulename)
+    utilsHelper.debug('%s.run' % modulename)
     run = importlib.import_module('%s.run' % modulename)
     return run
-
-
-class Product(object):
-    def __init__(self):
-        self.sn = None
-        self.imei = None
-        self.role = None
-        self.connectionId = None
-        self.detailedConnectionId = None
-        self.productName = None
-
-    def displayAttributes(self):
-        for name, value in vars(self).items():
-            debug.debug('%s = %s' % (name, value))
-
-
-class ParseProductJson(Parse):
-
-    def __init__(self, data):
-        self.data = data
-        self.products = []
-
-    def parse(self):
-        assert self.data is not None
-        f = open(self.data)
-        try:
-            decodeJson = json.loads(f.read())
-            for jsonitem in decodeJson:
-                product = Product()
-                product.role = jsonitem['role']
-                product.detailedConnectionId = jsonitem['id']
-                product.sn = jsonitem['attributes']['sn']
-                product.imei = jsonitem['attributes']['imei']
-                product.productName = jsonitem['attributes']['productname']
-                product.connectionId = jsonitem['status']['id']
-                product.simcount = 1
-
-                if 'simcount' in jsonitem['attributes'].keys():
-                    product.simcount = int(jsonitem['attributes']['simcount'])
-                debug.debug('simcount = %d' % product.simcount)
-                # marble property item
-                settingsItems = ['BluetoothName',
-                                 'Connection', 'SIM1PhoneNumber',
-                                 'SIM1Pin2Code', 'SIM1PinCode',
-                                 'SIM1Puk1Code', 'SIM1Puk2Code',
-                                 'SIM1ServiceNumber',
-                                 'SIM1VoiceMailNumber',
-                                 'SIM2PhoneNumber',
-                                 'SIM2Pin2Code',
-                                 'SIM2PinCode',
-                                 'SIM2Puk1Code',
-                                 'SIM2Puk2Code',
-                                 'SIM2ServiceNumber',
-                                 'SIM2VoiceMailNumber',
-                                 'SecurityCode',
-                                 'TraceConnection',
-                                 'WLANName',
-                                 'WLANName2', 'WLANPassword',
-                                 'WLANPassword2', 'VoIPAccount',
-                                 'VoIPPassword']
-
-                for subitem in settingsItems:
-                    if subitem in jsonitem['attributes'].keys():
-                        debug.debug('set setting item %s var: <%s>' %
-                                    (subitem, jsonitem['attributes'][subitem]))
-                        product.__setattr__(subitem,
-                                            jsonitem['attributes'][subitem])
-                # add security code for 3.0
-                product.__setattr__('SecurityCode', '201449')
-                self.products.append(product)
-        except KeyError, e:
-            debug.error('Can not found %s Please check the json file' % e)
-            self.products = None
-        finally:
-            f.close()
-        return self.products
 
 
 def getJsonInstances(indexfile):
@@ -92,16 +17,16 @@ def getJsonInstances(indexfile):
     files = []
     for line in f.readlines():
         line = line.replace('\n', '')
-        debug.debug(line)
+        utilsHelper.debug(line)
         files.append(line.replace('\n', ''))
     f.close()
 
     jsonList = []
     for file in files:
         if len(file) < 4:
-            debug.debug('file error'+file)
+            utilsHelper.debug('index file has empty line')
             continue
-        debug.debug('load %s' % file)
+        utilsHelper.debug('load %s' % file)
         f = open(file, 'r')
         jsonObj = json.loads(f.read())
         jsonList.append((jsonObj, file))
@@ -109,71 +34,98 @@ def getJsonInstances(indexfile):
     return jsonList
 
 
-def flashPhone2(product):
-    
-    flasher = Flasher(utilsHelper, productSN=product.sn)
-    flasher.flash()
-    if utilsHelper.getLastError() != 0:
-        return False
+logger = IcaseLogger('./results/flash.log')
+utilsHelper.setLogger(logger)
+
+
+def showDeviceInfo(device):
+    with open('./results/deviceinfo.log', 'w') as f:
+        f.write('%s %s' % (device.productname, device.sn))
+    utilsHelper.debug.info('%s %s' % (device.productname, device.sn))
+
+
+def flashPhone(product, flashTool='fastboot', parts_files=None):
+    # custom=*custom.img;boot=boot.img
+    if not parts_files:
+        parts_files = {}
     else:
-        return True
+        utilsHelper.debug.info(str(parts_files))
+    flasher = utilsHelper.getFlasher(product, flashTool=flashTool)
+    flasher.setFlashFiles(parts_files)
+    return flasher.flash(steptimeout=300)
 
 
 def main():
-    debug.debug('Enter execute module')
+    utilsHelper.debug.info('Enter execute module v2.0')
     cmdparams, vars = utilsHelper.parseCmdLine()
-    debug.debug(cmdparams)
     if cmdparams.result:
         utilsHelper.resultName = cmdparams.result
-        debug.debug('result name: %s' % utilsHelper.resultName)
+        utilsHelper.debug('result name: %s' % utilsHelper.resultName)
     else:
         utilsHelper.resultName = 'result.zip'
 
     if not os.path.exists('index'):
-        debug.debug("error can not found index file")
+        utilsHelper.debug("error can not found index file")
         utilsHelper.raiseException('index file not found')
         return
 
-    # command starter
-    if cmdparams.testtype:
-        debug.debug('starting %s' % cmdparams.testtype)
-        products = ParseProductJson(cmdparams.product).parse()
-        if cmdparams.flash:
-            for product in products:
-                if not flashPhone2(product):
-                    utilsHelper.raiseException('flash phone failed')
-                    return
-                utilsHelper.installTesthelper(product)
-        currentworkspace = os.path.abspath(os.getcwd())
-        moduleLauncher = getModule(cmdparams.testtype)
-        items = moduleLauncher.CreateItem(cmdparams)
-        moduleLauncher.Start(products, cmdparams.testtype+'.json', items=items)
-        os.chdir(currentworkspace)
+    # parse devices.json
+    if os.path.exists('devices.json'):
+        products = utilsHelper.getDevices('devices.json')
+        # ParseProductJson('devices.json').parse()
     else:
-        debug.debug('starting parse the index file')
-        # parse index
-        if os.path.exists('devices.json'):
-            products = ParseProductJson('devices.json').parse()
-        else:
-            debug.debug("Can not found devices.json file")
-            utilsHelper.raiseException('devices json file not found')
-            return
-        # check the right products
-        if not products:
-            utilsHelper.raiseException('products is empty')
-            return
+        utilsHelper.debug("Can not found devices.json file")
+        utilsHelper.raiseException('devices json file not found')
+        return
 
-        for product in products:
-            if cmdparams.flash:
-                if not flashPhone2(product):
-                    utilsHelper.raiseException('flash phone failed')
-                    return
-            utilsHelper.installTesthelper(product)
+    # check the right products
+    if not products:
+        utilsHelper.raiseException('products is empty')
+        return
 
+    for product in products:
+        showDeviceInfo(product)
+        if cmdparams.flash:
+            flash_files = {}
+            if cmdparams.flash_args:
+                utilsHelper.debug.info(cmdparams.flash_args)
+                args = cmdparams.flash_args
+                flash_files = utilsHelper.getFlashArgs(args)
+
+            flash_file = {}
+            if flash_files:
+                flash_file = flash_files[0]
+
+            if not flashPhone(product, cmdparams.flash, flash_file):
+                utilsHelper.raiseException('flash phone failed')
+                return
+
+            utilsHelper.disableFirstTimeUse(product)
+            utilsHelper.switchLanguage(product, 'en', 'US')
+        # end flash
+
+        # initial phone status
+        utilsHelper.setSreenTimeout(product)
+        utilsHelper.simCardInit(product)
+        utilsHelper.clearsdcard1(product)
+        utilsHelper.rebootTarget(product)
+        # check the language is except
+        if cmdparams.flash:
+            if not utilsHelper.checkLanguage(product, 'en'):
+                utilsHelper.debug.info('retry to switch language')
+                utilsHelper.switchLanguage(product, 'en', 'US')
+                utilsHelper.rebootTarget(product)
+                if not utilsHelper.checkLanguage(product, 'en'):
+                    utilsHelper.raiseException('switch language failed')
+
+        utilsHelper.installTesthelper(product)
+        utilsHelper.setSimOnline(product)
+
+        #  run test case
         jsonlist = getJsonInstances('index')
         hasFailed = False
         for jsonObj, file in jsonlist:
-            debug.debug('starting %s' % jsonObj['type'])
+            utilsHelper.debug('starting %s' % jsonObj['type'])
             currentworkspace = os.path.abspath(os.getcwd())
             testType = jsonObj['type']
             moduleLauncher = getModule(testType)
@@ -182,12 +134,15 @@ def main():
             if utilsHelper.getLastError() != 0:
                 hasFailed = True
 
-        if not os.path.exists('./results/njunit.xml'):
-            jparser = JunitParser()
-            jparser.parse('./results/njunit.xml')
-            utilsHelper.addDirArchive(utilsHelper.resultName, './results')
+    # end for products
 
-        if hasFailed:
-            utilsHelper.raiseException('Execute failed')
+    if not os.path.exists('./results/njunit.xml'):
+        jparser = JunitParser()
+        jparser.parse('./results/njunit.xml')
+        utilsHelper.addDirArchive(utilsHelper.resultName, './results')
+    if hasFailed:
+        utilsHelper.raiseException('Execute failed')
+
+
 if __name__ == '__main__':
     main()
