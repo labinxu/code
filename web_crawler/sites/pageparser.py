@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 if '../../' not in sys.path:
     sys.path.append('../../')
 from common.debug import debug
+import threading
 
 
 class PageParser(object):
@@ -17,13 +18,19 @@ class PageParser(object):
         item = soup.find('input', attrs=attrs)
         return item
 
-    def getSoup(self):
-        if self.soup:
-            return self.soup
+    def _getSoup(self):
         response = request.urlopen(self.pageUrl)
         debug.output('parsing %s' % self.pageUrl)
         html = response.read()
         data = html.decode('gbk', 'ignore').replace('&nbsp', '')
         data = data.encode('utf-8')
         self.soup = BeautifulSoup(data)
+        return self.soup
+
+    def getSoup(self):
+        if self.soup:
+            return self.soup
+        thread = threading.Thread(target=self._getSoup)
+        thread.start()
+        thread.join(timeout=20)
         return self.soup

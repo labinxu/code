@@ -1,7 +1,5 @@
 # -*- coding:utf-8-*-
-from bs4 import BeautifulSoup
 import re
-import urllib.request as request
 import sys
 if '../' not in sys.path:
     sys.path.append('../')
@@ -35,6 +33,9 @@ class AliSite(object):
         return re.match(urlpatern, text).group(1)
 
     def __init__(self, url='http://www.1688.com'):
+        # store the search result
+        self.companies = []
+
         self.pageParser = PageParser(url)
 
         soup = self.pageParser.getSoup()
@@ -42,23 +43,22 @@ class AliSite(object):
         self.webPage.pageName = 'alibaba'
         soup = self.pageParser.getSoup()
         for list in soup.find_all('form'):
-            pass
-        #     for itemli in list.find_all('li'):
-        #         dataConf = itemli.get('data-config')
-        #         item = itemli.find('a')
-        #         temp = (item.string, self.__matchAUrl(dataConf))
-        #         self.webPage.validSearchItems.append(temp)
+            for itemli in list.find_all('li'):
+                dataConf = itemli.get('data-config')
+                item = itemli.find('a')
+                temp = (item.string, self.__matchAUrl(dataConf))
+                self.webPage.validSearchItems.append(temp)
 
         # # input keywords
-        # input = soup.find('input', attrs={'id': 'keywordinput'})
-        # self.webPage.postKeywords = input.get('name')
+        input = soup.find('input', attrs={'id': 'keywordinput'})
+        self.webPage.postKeywords = input.get('name')
 
     def searchProduct(self, keywords):
         url = 'http://s.1688.com/selloffer/offer_search.htm'
         postdata = {'keywords': keywords.encode('gbk')}
         product = CompanyFromProduct(url, postdata)
-        res = product.getCompanies()
-        for company in res:
+        self.companies = product.getCompanies()
+        for company in self.companies:
             company.contactInfo.displayAttributes()
 
     def searchSupplier(self, keywords):
@@ -66,8 +66,8 @@ class AliSite(object):
         postdata = {'keywords': keywords.encode('gbk')}
 
         supplier = ComanyBySupplier(url, postdata)
-        res = supplier.getCompanies()
-        for company in res:
+        self.companies = supplier.getCompanies()
+        for company in self.companies:
             company.contactInfo.displayAttributes()
 
 

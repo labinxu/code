@@ -101,7 +101,6 @@ class CompanyBySearch(object):
         req = request.Request(url=self.url, data=postdata)
         result = request.urlopen(req).read()
         debug.output('first page finished')
-
         result = result.decode('gbk', 'ignore').encode('utf-8')
         page = BeautifulSoup(result)
         numberOfPage = self.getNumberOfPages(page)
@@ -118,8 +117,6 @@ class ComanyBySupplier(CompanyBySearch):
     def getCompanies(self):
         page, max_page = self.getFirstPage()
         self.companies = self._getCompanies(page)
-        return self.companies
-
         while max_page >= 0:
             max_page -= 1
             page = self.getNextPage(page)
@@ -134,13 +131,11 @@ class ComanyBySupplier(CompanyBySearch):
         if not items:
             return []
         for item in items:
-            debug.output('have %s remains' % self.totalCompany)
             company = Company()
             company.name = item.get('titile')
             company.url = item.get('href')
             company = self.getDetails(company)
             self.companies.append(company)
-            break
         return self.companies
 
 
@@ -158,8 +153,6 @@ class CompanyFromProduct(CompanyBySearch):
     def getCompanies(self):
         page, max_page = self.getFirstPage()
         self.companies = self._getCompanies(page)
-        return self.companies
-
         while max_page >= 0:
             max_page -= 1
             page = self.getNextPage(page)
@@ -174,7 +167,6 @@ class CompanyFromProduct(CompanyBySearch):
         for item in page.find_all(self.companyKeyword, attrs=attrs):
             companies = item.find_all('a', attrs=itemattrs)
             for sub in companies:
-                debug.output('have %d comanies remain' % self.totalCompany)
                 company = Company()
                 company.name = sub.string.replace('\n', '')
                 company.url = sub.get('href').replace('\n', '')
