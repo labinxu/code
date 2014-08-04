@@ -7,7 +7,7 @@ class PageData(object):
             print('%s = %s' % (name, value))
 
 
-class CertifiacteInfo(PageData):
+class CompanyCertifiacteInfo(PageData):
     pass
 
 
@@ -56,10 +56,11 @@ class CompanyContactInfo(PageData):
 class Company(object):
     def __init__(self):
         self.companName = None
+        self.url = None
+
         self.contactInfo = None
         self.operateStatus = None
         self.baseInfo = None
-        self.url = None
 
 
 class CompanyParser(object):

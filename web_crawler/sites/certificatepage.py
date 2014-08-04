@@ -10,8 +10,11 @@ class CertifiactePageParser(PageParser):
     def getYellowPageUrl(self):
         if self.yellowpageUrl:
             return self.yellowpageUrl
-        
-        linkitem = self.getSoup().find('a', attrs={'class': 'comment-link'})
+        soup = self.getSoup()
+        if not soup:
+            return None
+
+        linkitem = soup.find('a', attrs={'class': 'comment-link'})
         if linkitem:
             self.yellowpageUrl = linkitem.get('href')
 

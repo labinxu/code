@@ -20,7 +20,6 @@ class PageParser(object):
     def getSoup(self):
         if self.soup:
             return self.soup
-
         response = request.urlopen(self.pageUrl)
         debug.output('parsing %s' % self.pageUrl)
         html = response.read()

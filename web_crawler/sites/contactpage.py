@@ -27,7 +27,11 @@ class ContactInfoPageParser(PageParser):
             self.contentsMapping[index](var)
 
     def _getContentTable(self):
-        contents = self.getSoup().find_all('div', attrs={'class': "content"})
+        soup = self.getSoup()
+        if not soup:
+            return None
+
+        contents = soup.find_all('div', attrs={'class': "content"})
         for content in contents:
             item = content.find('table')
             if item:
@@ -38,6 +42,9 @@ class ContactInfoPageParser(PageParser):
             return self.contactInfo
         self.initContentsMapping()
         table = self._getContentTable()
+        if not table:
+            return None
+
         for index, item in enumerate(table.find_all('td')):
             self._setContactInfo(index, item.text.expandtabs(1).strip())
         return self.contactInfo

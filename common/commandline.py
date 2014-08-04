@@ -6,7 +6,9 @@ class CommandLine(object):
         import optparse
         usage = "usage: %prog [options] arg"
         parser = optparse.OptionParser(usage)
-        parser.add_option('-p', '--product', dest='product',
+        parser.add_option('-p', '--product', dest='PRODUCT',
                           help='contains product information')
+        parser.add_option('-s', '--supplier', dest='SUPPLIER',
+                          help='company info  from supplier search page')
         return parser.parse_args()
 

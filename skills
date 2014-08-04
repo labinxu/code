@@ -1,3 +1,7 @@
 When push error: bad file occured
 
 git remote add origin https://labinxu:bajie110@github.com/labinxu/code.git
+
+elpy can not encode error
+change jedibackend.py:92 to :
+     with open(loc.module_path, 'r', encoding='utf-8') as f:
