@@ -5,3 +5,26 @@ git remote add origin https://labinxu:bajie110@github.com/labinxu/code.git
 elpy can not encode error
 change jedibackend.py:92 to :
      with open(loc.module_path, 'r', encoding='utf-8') as f:
+
+
+########################################
+import multiprocessing
+import time
+
+def func(msg):
+    for i in xrange(3):
+	    print msg
+	    time.sleep(1)
+    return "done " + msg
+
+if __name__ == "__main__":
+    pool = multiprocessing.Pool(processes=4)
+    result = []
+    for i in xrange(10):
+        msg = "hello %d" %(i)
+        result.append(pool.apply_async(func, (msg, )))
+    pool.close()
+    pool.join()
+    for res in result:
+        print res.get()
+    print "Sub-process(es) done."
