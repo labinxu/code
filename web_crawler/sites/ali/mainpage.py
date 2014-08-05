@@ -59,6 +59,18 @@ class AliSite(object):
         url = 'http://s.1688.com/selloffer/offer_search.htm'
         postdata = {'keywords': keywords.encode('gbk')}
         product = CompanyFromProduct(url, postdata)
+        page, _ = product.getFirstPage()
+        pages = []
+        pages.append(page)
+        while page:
+            # companies = product._getCompanies(page)
+            # for c in companies:
+            #     if c.contactInfo:
+            #         c.contactInfo.displayAttributes()
+            page = product.getNextPage(page)
+            pages.append(page)
+        print(len(pages))
+        return
         q = Queue()
         p = Process(target=product.getCompanies, args=(q, ))
         p.start()
