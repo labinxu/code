@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import logging
 
 
 class Debug():
@@ -9,6 +10,7 @@ class Debug():
     def __init__(self, logger=None, level=2):
         self.level = level
         self.logger = logger
+        self.logging = logging.getLogger('endlesscode')
 
     def formatLog(self, msg):
         '''
@@ -22,6 +24,7 @@ class Debug():
 
     def debug(self, msg):
         msg = self.formatLog(msg)
+        
         if self.level >= 3:
             print("Tool:Debug %s" % msg)
         if self.logger:

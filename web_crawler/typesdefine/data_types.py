@@ -6,6 +6,20 @@ class PageData(object):
         for name, value in vars(self).items():
             print('%s = %s' % (name, value))
 
+    def storeSting(self):
+        titles = []
+        values = []
+        for name, value in vars(self).items():
+            titles.append(name)
+            values.append(value)
+        return (titles, values)
+
+    def getTitles(self):
+        titles = []
+        for name, value in vars(self).items():
+            titles.append(name)
+        return titles
+
 
 class CompanyCertifiacteInfo(PageData):
     pass
@@ -58,9 +72,27 @@ class Company(object):
         self.companName = None
         self.url = None
 
-        self.contactInfo = None
-        self.operateStatus = None
-        self.baseInfo = None
+        self.contactInfo = CompanyContactInfo()
+        self.operateStatus = CompanyOperateStatus()
+        self.baseInfo = CompanyBaseInfo()
+
+    def getTitles(self):
+        titles = []
+        # for title, value in vars(self).items():
+        #     titles.append(title)
+        titles.extend(self.contactInfo.getTitles())
+        titles.extend(self.baseInfo.getTitles())
+        return titles
+
+    def storeSting(self):
+        titles, values = self.contactInfo.storeSting()
+        tmptitles, tmpvars = self.operateStatus.storeSting()
+        titles.extend(tmptitles)
+        values.extend(tmpvars)
+
+        tmptitles, tmpvars = self.baseInfo.storeSting()
+        titles.extend(tmptitles)
+        values.extend(tmpvars)
 
 
 class CompanyParser(object):
@@ -81,3 +113,4 @@ class WebPage(object):
         self.url = url
         self.validSearchItems = []
         self.parser = None
+        self.postKeywords = ''
