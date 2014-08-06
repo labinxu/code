@@ -51,7 +51,26 @@ class CompanyBySearch(object):
             debug.error('%s' % str(e))
         except AttributeError as e:
             debug.error('AttributeError %s' % str(e))
+
         return company
+
+    def getNextPageData(self, page):
+        if not page:
+            return None
+
+        attrs = {'class': 'page-next'}
+        page = BeautifulSoup(page)
+        item = page.find('a', attrs=attrs)
+        if item:
+            nexpage = item.get('href')
+            counter = 3
+            while counter > 0:
+                try:
+                    page = PageParser(nexpage).getData()
+                    return page
+                except Exception as e:
+                    debug.error('%s will retry' % str(e))
+                    counter -= 1
 
     def getNextPage(self, page):
         if not page:
@@ -61,7 +80,14 @@ class CompanyBySearch(object):
         item = page.find('a', attrs=attrs)
         if item:
             nexpage = item.get('href')
-            return PageParser(nexpage).getSoup()
+            counter = 3
+            while counter > 0:
+                try:
+                    page = PageParser(nexpage).getSoup()
+                    return page
+                except Exception as e:
+                    debug.error('%s will retry' % str(e))
+                    counter -= 1
 
     def getCompanies(self):
         return self.companies
@@ -75,17 +101,40 @@ class CompanyBySearch(object):
             numberOfPage = int(input.get('data-max'))
             break
         return numberOfPage
+    
+    def getFirstPageData(self):
+        postdata = parse.urlencode(self.keyWords)
+        postdata = postdata.encode(encoding='utf-8')
+        req = request.Request(url=self.url, data=postdata)
+        counter = 3
+        while counter > 0:
+            try:
+                result = request.urlopen(req).read()
+                result = result.decode('gbk', 'ignore').encode('utf-8')
+                page = BeautifulSoup(result)
+                numberOfPage = self.getNumberOfPages(page)
+                debug.output('first page max number %s' % numberOfPage)
+                return (result, numberOfPage)
+            except Exception as e:
+                debug.error('%s will retry' % str(e))
+                counter -= 1
 
     def getFirstPage(self):
         postdata = parse.urlencode(self.keyWords)
         postdata = postdata.encode(encoding='utf-8')
         req = request.Request(url=self.url, data=postdata)
-        result = request.urlopen(req).read()
-        result = result.decode('gbk', 'ignore').encode('utf-8')
-        page = BeautifulSoup(result)
-        numberOfPage = self.getNumberOfPages(page)
-        debug.output('first page finished max number %s' % numberOfPage)
-        return (page, numberOfPage)
+        counter = 3
+        while counter > 0:
+            try:
+                result = request.urlopen(req).read()
+                result = result.decode('gbk', 'ignore').encode('utf-8')
+                page = BeautifulSoup(result)
+                numberOfPage = self.getNumberOfPages(page)
+                debug.output('first page max number %s' % numberOfPage)
+                return (page, numberOfPage)
+            except Exception as e:
+                debug.error('%s will retry' % str(e))
+                counter -= 1
 
 
 class ComanyBySupplier(CompanyBySearch):
@@ -132,50 +181,27 @@ class CompanyFromProduct(CompanyBySearch):
         self.splitTask = 2
         self.totalCompanies = 0
 
-    def getCompanies(self, output=None):
+    def getCompanies(self):
         page, max_page = self.getFirstPage()
         self.companies = self._getCompanies(page)
-        if not output:
-            debug.output('output is Nonex')
-            while max_page >= 0:
-                max_page -= 1
-                page = self.getNextPage(page)
-                if page:
-                    self.companies.extend(self._getCompanies(page))
+        while max_page >= 0:
+            max_page -= 1
+            page = self.getNextPage(page)
+            if page:
+                self.companies.extend(self._getCompanies(page))
 
-            return self.companies
-        else:
-            debug.output('put company %s' % len(self.companies))
-            output.put(self.companies)
-            for company in self.companies:
-                if company.contactInfo:
-                    company.contactInfo.displayAttributes()
-            return
-
-            time.sleep(5)
-            while max_page >= 0:
-                max_page -= 1
-                page = self.getNextPage(page)
-                if page:
-                    companies = self._getCompanies(page)
-                    output.put(companies)
+        return self.companies
 
     def _getCompanies(self, page):
-        companies = []
+        results = []
         attrs = {'class': self.companyClassKeyword}
         itemattrs = {'class': 'sm-previewCompany sw-mod-previewCompanyInfo'}
         companies = page.find_all(self.companyKeyword, attrs=attrs)
-        tmpsize = len(companies)
-        self.totalCompanies += tmpsize
-        debug.output('have %s company' % self.totalCompanies)
         for index, item in enumerate(companies):
             sub = item.find('a', attrs=itemattrs)
             company = Company()
-            company.name = sub.string.replace('\n', '')
+            company.companyName = sub.string.replace('\n', '')
             company.url = sub.get('href').replace('\n', '')
-            currentIndex = index+1+(self.totalCompanies - tmpsize)
-            debug.output('company %s index: %s' % (company.name, currentIndex))
             company = self.getDetails(company)
-            companies.append(company)
-            break
-        return companies
+            results.append(company)
+        return results

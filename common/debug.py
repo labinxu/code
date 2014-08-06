@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import logging
+import sys
 
 
 class Debug():
@@ -10,7 +11,13 @@ class Debug():
     def __init__(self, logger=None, level=2):
         self.level = level
         self.logger = logger
-        self.logging = logging.getLogger('endlesscode')
+        format = "[%(levelname)s][%(asctime)%s][%(message)s']\
+[%(filename)s:%(funcName)s:%(lineno)s]"
+
+        logging.basicConfig(filename=sys.argv[0]+".log",
+                            level=logging.DEBUG,
+                            filemode='w',
+                            format=format)
 
     def formatLog(self, msg):
         '''
@@ -24,7 +31,6 @@ class Debug():
 
     def debug(self, msg):
         msg = self.formatLog(msg)
-        
         if self.level >= 3:
             print("Tool:Debug %s" % msg)
         if self.logger:
@@ -45,6 +51,8 @@ class Debug():
             self.logger.append(msg)
 
     def output(self, msg):
+        logging.info(msg)
+        return
         msg = self.formatLog(msg)
         print('Tool:%s' % msg)
         if self.logger:

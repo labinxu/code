@@ -69,7 +69,7 @@ class CompanyContactInfo(PageData):
 
 class Company(object):
     def __init__(self):
-        self.companName = None
+        self.companyName = None
         self.url = None
 
         self.contactInfo = CompanyContactInfo()

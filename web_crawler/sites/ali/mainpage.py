@@ -1,7 +1,6 @@
 # -*- coding:utf-8-*-
 import re
 import sys
-import time
 if '../' not in sys.path:
     sys.path.append('../')
 
@@ -14,9 +13,11 @@ from common.commandline import CommandLine
 from sites.ali.product import ComanyBySupplier
 from sites.ali.product import CompanyFromProduct
 from common.debug import debug
-from multiprocessing import Queue, Process
+import multiprocessing
 from utils.dbhelper import DBHelper
 from typesdefine.data_types import WebPage, Company
+import socket
+from bs4 import BeautifulSoup
 
 
 class AliSite(object):
@@ -30,6 +31,9 @@ class AliSite(object):
         return re.match(urlpatern, text).group(1)
 
     def __init__(self, url='http://www.1688.com', taskName='task0'):
+        timeout = 10
+        socket.setdefaulttimeout(timeout)
+
         self.companies = []
         self.webPage = WebPage(url)
         self.webPage.pageName = 'alibaba'
@@ -55,39 +59,35 @@ class AliSite(object):
         # self.webPage.postKeywords = input.get('name')
         
     def searchProduct(self, keywords):
-        debug.output('searchProduct')
         url = 'http://s.1688.com/selloffer/offer_search.htm'
         postdata = {'keywords': keywords.encode('gbk')}
         product = CompanyFromProduct(url, postdata)
-        page, _ = product.getFirstPage()
+        page, _ = product.getFirstPageData()
         pages = []
         pages.append(page)
+        counter = 0
         while page:
-            # companies = product._getCompanies(page)
-            # for c in companies:
-            #     if c.contactInfo:
-            #         c.contactInfo.displayAttributes()
-            page = product.getNextPage(page)
+            page = product.getNextPageData(page)
             pages.append(page)
-        print(len(pages))
-        return
-        q = Queue()
-        p = Process(target=product.getCompanies, args=(q, ))
-        p.start()
-        while True:
-            time.sleep(10)
-            if not q.empty():
-                for company in q.get():
-                    if company.contactInfo:
-                        company.contactInfo.displayAttributes()
-                    else:
-                        debug.outxput('%s,%s' % (company.companName,
-                                                 company.url))
-            else:
-                debug.output('q is empty')
+            counter += 1
+        p = multiprocessing.Pool(processes=4)
+        result = []
+        for page in pages:
+            res = p.apply_async(GetCompanies, args=(product, page))
+            result.append(res)
+        p.close()
+        p.join()
 
-            if not p.is_alive():
-                break
+        for res in result:
+            try:
+                print(len(res.get()))
+                # for company in res.get():
+                #     print(company.companyName)
+                #     if company.contactInfo:
+                #         company.contactInfo.displayAttributes()
+
+            except Exception as e:
+                print(str(e))
 
     def searchSupplier(self, keywords):
         url = 'http://s.1688.com/company/company_search.htm'
@@ -100,6 +100,11 @@ class AliSite(object):
                 company.contactInfo.displayAttributes()
             else:
                 debug.output('%s, %s' % (company.companName, company.url))
+
+
+def GetCompanies(product, page):
+    companies = product._getCompanies(BeautifulSoup(page))
+    return companies
 
 
 def main():
