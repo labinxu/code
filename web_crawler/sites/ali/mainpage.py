@@ -15,9 +15,8 @@ from sites.ali.product import CompanyFromProduct
 from common.debug import debug
 import multiprocessing
 from utils.dbhelper import DBHelper
-from typesdefine.data_types import WebPage, Company
 import socket
-from bs4 import BeautifulSoup
+from typesdefine.data_types import WebPage
 
 
 class AliSite(object):
@@ -37,12 +36,26 @@ class AliSite(object):
         self.companies = []
         self.webPage = WebPage(url)
         self.webPage.pageName = 'alibaba'
-        self.dbhelper = DBHelper('dbase')
+        self.dbhelper = DBHelper('../../qitong.db')
         self.taskName = taskName
         initTable = 'drop table if exists `%s`' % taskName
         self.dbhelper.execute(initTable)
-        company = Company()
-        debug.output(company.getTitles())
+
+        createTable = '''
+        CREATE TABLE "%s" (
+        "id" integer NOT NULL PRIMARY KEY,
+        "company_name" varchar(100) NOT NULL,
+        "company_address" varchar(200) NOT NULL,
+        "company_phone_number" varchar(20) NULL,
+        "company_mobilephone_number" varchar(20) NULL,
+        "company_fax_number" varchar(20) NULL,
+        "company_contact_person" varchar(10) NULL,
+        "company_postcode" varchar(20) NULL,
+        "company_web_site" varchar(100) NULL
+        );''' % taskName
+        self.dbhelper.execute(createTable)
+        # company = Company()
+        # company.getTitles())
         # ['phoneNumber', 'faxNumber', 'web', 'address', 'contactPerson',
         # 'mobilePhone', 'postcode', 'majorBusiness', 'majorProduct']
 
