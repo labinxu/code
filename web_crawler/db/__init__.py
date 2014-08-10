@@ -42,11 +42,14 @@ class ModelBase(type):
                     return super_new(cls, name, bases, dct)
             attrs = dict((name, value) for name,
                          value in dct.items() if not name.startswith('__'))
-            sqlstr = 'create table "%s_table" (' % name
+            dct['__table_name__'] = '%s_table' % name
+
+            sqlstr = 'create table "%s" (' % dct['__table_name__']
+
             for name, var in attrs.items():
                 if isinstance(var, DBField):
-                    sqlstr += '"%s" %s,' % (name, var)
-            dct['__sql__'] = '%s);' % sqlstr[:-1]
+                    sqlstr += '"%s" %s, ' % (name, var)
+            dct['__init_table__'] = '%s);' % sqlstr[:-2]
 
             return super(ModelBase, cls).__new__(cls,
                                                  name,
@@ -59,11 +62,30 @@ class DBModel(with_metaclass(ModelBase)):
         for name, var in kwargs.items():
             self.__dict__[name] = var
 
+    def save(self):
+        attrs = dict((name, value) for name,
+                     value in self.__dict__.items()
+                     if not name.startswith('__'))
+        
+        sqlstr = 'insert into %s(%s) values(%s)'
+        titles = ''
+        values = ''
+        for title, var in attrs.items():
+            titles += '%s, ' % title
+            values += '%s, ' % var
+        sqlstr = sqlstr % (self.__table_name__,
+                           titles[:-2], values[:-2])
+        print(sqlstr)
+
+
 class Myclass(DBModel):
     company_name = CharField(max_length=30)
     company_addr = CharField(max_length=400)
+
     def dispaly(self):
         print('display')
 
-print(Myclass.__sql__)
-my = Myclass(company_name='a', company_addr='aag')
+if __name__ == '__main__':
+    my = Myclass(company_name='a', company_addr='aag')
+    my.save()
+    print(my.__init_table__)

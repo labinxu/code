@@ -17,6 +17,7 @@ import multiprocessing
 from utils.dbhelper import DBHelper
 import socket
 from typesdefine.data_types import WebPage
+from bs4 import BeautifulSoup
 
 
 class AliSite(object):
@@ -78,11 +79,9 @@ class AliSite(object):
         page, _ = product.getFirstPageData()
         pages = []
         pages.append(page)
-        counter = 0
         while page:
             page = product.getNextPageData(page)
             pages.append(page)
-            counter += 1
         p = multiprocessing.Pool(processes=4)
         result = []
         for page in pages:
@@ -131,6 +130,5 @@ def main():
         aliSite.searchProduct(params.PRODUCT)
 
     # province=
-        
 if __name__ == '__main__':
     main()

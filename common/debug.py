@@ -51,8 +51,6 @@ class Debug():
             self.logger.append(msg)
 
     def output(self, msg):
-        logging.info(msg)
-        return
         msg = self.formatLog(msg)
         print('Tool:%s' % msg)
         if self.logger:

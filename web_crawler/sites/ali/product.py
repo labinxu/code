@@ -106,6 +106,7 @@ class CompanyBySearch(object):
         postdata = parse.urlencode(self.keyWords)
         postdata = postdata.encode(encoding='utf-8')
         req = request.Request(url=self.url, data=postdata)
+        print(self.url)
         counter = 3
         while counter > 0:
             try:

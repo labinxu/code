@@ -67,19 +67,6 @@ class CompanyContactInfo(PageData):
         self.web = web
 
 
-class DBField(object):
-    """Base class for all field types"""
-    def __init__(self, name=None, max_length=None):
-        self.name = name
-        self.max_length = max_length
-
-    def __str__(self):
-        tmp = ''
-        for name, _ in vars(self).items():
-            tmp = '%s,%s' % (tmp, name)
-        return tmp
-
-
 class Company(object):
     def __init__(self):
         self.companyName = None
