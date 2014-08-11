@@ -2,7 +2,6 @@
 import urllib.parse as parse
 import urllib.request as request
 import sys
-import time
 if '../' not in sys.path:
     sys.path.append('../')
 if '../../../' not in sys.path:
@@ -10,13 +9,13 @@ if '../../../' not in sys.path:
 if '../../' not in sys.path:
     sys.path.append('../../')
 from bs4 import BeautifulSoup
-from typesdefine.data_types import Company
 from common.debug import debug
 from sites.yellowpage import YellowPageParser
 from sites.companypage import CompanyPageParser
 from sites.certificatepage import CertifiactePageParser
 from sites.contactpage import ContactInfoPageParser
 from sites.pageparser import PageParser
+from typesdefine import Enterprise
 
 
 class CompanyBySearch(object):
@@ -29,9 +28,9 @@ class CompanyBySearch(object):
         self.companies = []
         # http://s.1688.com/company/company_search.htm?keywords=keyboard
 
-    def getDetails(self, company):
+    def getDetails(self, ent):
         try:
-            pageParser = CompanyPageParser(company.url)
+            pageParser = CompanyPageParser(ent.company_website)
             certifUrl = pageParser.getCertifyInfoUrl()
 
             pageParser = CertifiactePageParser(certifUrl)
@@ -43,16 +42,19 @@ class CompanyBySearch(object):
             pageParser = ContactInfoPageParser(contactUrl)
             contactinfo = pageParser.getContactInfo()
 
-            company.contactInfo = contactinfo
-            if not company.contactInfo.web:
-                company.contactInfo.web = company.url
+            ent.company_contacts = contactinfo.contactPerson
+            ent.company_phone_number = contactinfo.phoneNumber
+            ent.company_mobile_phone = contactinfo.mobilePhone
+            ent.company_fax = contactinfo.faxNumber
+            ent.company_postcode = contactinfo.postcode
+            ent.company_addr = contactinfo.address
 
         except UnicodeEncodeError as e:
             debug.error('%s' % str(e))
         except AttributeError as e:
             debug.error('AttributeError %s' % str(e))
 
-        return company
+        return ent
 
     def getNextPageData(self, page):
         if not page:
@@ -101,12 +103,11 @@ class CompanyBySearch(object):
             numberOfPage = int(input.get('data-max'))
             break
         return numberOfPage
-    
+
     def getFirstPageData(self):
         postdata = parse.urlencode(self.keyWords)
         postdata = postdata.encode(encoding='utf-8')
         req = request.Request(url=self.url, data=postdata)
-        print(self.url)
         counter = 3
         while counter > 0:
             try:
@@ -161,13 +162,14 @@ class ComanyBySupplier(CompanyBySearch):
         items = page.find_all('a', attrs=attrs)
         if not items:
             return []
+        results = []
         for item in items:
-            company = Company()
-            company.name = item.get('titile')
-            company.url = item.get('href')
-            company = self.getDetails(company)
-            self.companies.append(company)
-        return self.companies
+            name = item.get('titile')
+            website = item.get('href')
+            ent = Enterprise(company_name=name, company_website=website)
+            ent = self.getDetails(ent)
+            results.append(ent)
+        return results
 
 
 class CompanyFromProduct(CompanyBySearch):
@@ -200,9 +202,10 @@ class CompanyFromProduct(CompanyBySearch):
         companies = page.find_all(self.companyKeyword, attrs=attrs)
         for index, item in enumerate(companies):
             sub = item.find('a', attrs=itemattrs)
-            company = Company()
-            company.companyName = sub.string.replace('\n', '')
-            company.url = sub.get('href').replace('\n', '')
-            company = self.getDetails(company)
-            results.append(company)
+            name = sub.string.replace('\n', '')
+            website = sub.get('href').replace('\n', '')
+            ent = Enterprise(company_name=name, company_website=website)
+            ent = self.getDetails(ent)
+            results.append(ent)
+            break
         return results

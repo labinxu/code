@@ -46,7 +46,7 @@ class CompanyContactInfo(PageData):
         self.web = None
 
     def setContactPerson(self, contactPerson):
-        self.contactPerson = contactPerson
+        self.contactPerson = contactPerson.replace('\n', '')
 
     def setPhoneNumber(self, phoneNumber):
         self.phoneNumber = phoneNumber

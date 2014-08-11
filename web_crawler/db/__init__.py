@@ -1,4 +1,10 @@
 # from functools import total_ordering
+import sqlite3
+
+
+class DBException(Exception):
+    def __init__(self, msg):
+        self.msg = msg
 
 
 def with_metaclass(meta, *bases):
@@ -27,7 +33,7 @@ class CharField(DBField):
         # self.validators.append(validators.MaxLengthValidator(self.max_length))
 
     def __str__(self):
-        return 'varchar(%s) ' % (self.max_length, )
+        return 'varchar(%s) ' % self.max_length
 
 
 class ModelBase(type):
@@ -50,14 +56,50 @@ class ModelBase(type):
                 if isinstance(var, DBField):
                     sqlstr += '"%s" %s, ' % (name, var)
             dct['__init_table__'] = '%s);' % sqlstr[:-2]
-
             return super(ModelBase, cls).__new__(cls,
                                                  name,
                                                  bases,
                                                  dct)
 
 
+class DBOperator(object):
+    def __init__(self, dbname):
+        self.db = sqlite3.connect(dbname)
+
+    def execute(self, sql):
+        cursor = self.db.cursor()
+        cursor.execute(sql)
+        self.db.commit()
+
+    def select(self, sql):
+        cursor = self.db.cursor()
+        cursor.execute(sql)
+        return cursor.fetchall()
+
+    def getdb(self):
+        return self.db
+
+
+class DBHelper(DBOperator):
+    _instance = None
+
+    @staticmethod
+    def getInstance(dbname=None):
+        if not DBHelper._instance:
+            print('db name %s' % dbname)
+            DBHelper._instance = DBOperator(dbname)
+        return DBHelper._instance
+
+
 class DBModel(with_metaclass(ModelBase)):
+
+    @staticmethod
+    def getDBHelper():
+        try:
+            return DBHelper.getInstance()
+        except Exception as e:
+            print('get DB helper error' % str(e))
+
     def __init__(self, *args, **kwargs):
         for name, var in kwargs.items():
             self.__dict__[name] = var
@@ -66,26 +108,21 @@ class DBModel(with_metaclass(ModelBase)):
         attrs = dict((name, value) for name,
                      value in self.__dict__.items()
                      if not name.startswith('__'))
-        
         sqlstr = 'insert into %s(%s) values(%s)'
         titles = ''
         values = ''
         for title, var in attrs.items():
+            if not var:
+                var = 'not provide'
             titles += '%s, ' % title
-            values += '%s, ' % var
+            values += '"%s", ' % var
         sqlstr = sqlstr % (self.__table_name__,
                            titles[:-2], values[:-2])
-        print(sqlstr)
+        # print(DBModel.getDBHelper())
+        if DBModel.getDBHelper():
+            
+            DBModel.getDBHelper().execute(sqlstr)
+        else:
+            print('error')
+            raise DBException('dbhelper not initial')
 
-
-class Myclass(DBModel):
-    company_name = CharField(max_length=30)
-    company_addr = CharField(max_length=400)
-
-    def dispaly(self):
-        print('display')
-
-if __name__ == '__main__':
-    my = Myclass(company_name='a', company_addr='aag')
-    my.save()
-    print(my.__init_table__)
