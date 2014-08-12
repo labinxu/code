@@ -17,8 +17,3 @@ class Enterprise(DBModel):
     company_website = CharField(max_length=100)
     company_addr = CharField(max_length=100)
     company_details = CharField(max_length=200)
-
-    def display(self):
-        for name, var in vars(self).items():
-           # print(name, type(var))
-            pass

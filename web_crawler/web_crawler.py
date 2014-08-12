@@ -3,7 +3,6 @@ from utils import CommandLine
 from db import DBHelper
 from typesdefine import Enterprise
 import importlib
-from db import DBHelper
 import os
 
 

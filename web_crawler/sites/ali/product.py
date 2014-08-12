@@ -49,8 +49,6 @@ class CompanyBySearch(object):
             ent.company_postcode = contactinfo.postcode
             ent.company_addr = contactinfo.address
 
-        except UnicodeEncodeError as e:
-            debug.error('%s' % str(e))
         except AttributeError as e:
             debug.error('AttributeError %s' % str(e))
 
@@ -207,5 +205,4 @@ class CompanyFromProduct(CompanyBySearch):
             ent = Enterprise(company_name=name, company_website=website)
             ent = self.getDetails(ent)
             results.append(ent)
-            break
         return results

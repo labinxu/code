@@ -1,7 +1,7 @@
 # -*- coding:utf-8-*-
 import re
 import sys
-import time
+import concurrent.futures
 if '../' not in sys.path:
     sys.path.append('../')
 
@@ -67,32 +67,52 @@ class AliSite(object):
         while page:
             page = product.getNextPageData(page)
             pages.append(page)
-            break
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            futures = {executor.submit(GetCompanies,
+                                       product,
+                                       page): page for page in pages}
 
-        p = multiprocessing.Pool(processes=4)
-        results = []
-        for page in pages:
-
-            try:
-                res = p.apply_async(GetCompanies,
-                                    args=(product, page))
-                results.append(res)
-            except Exception as e:
-                print(str(e))
-
-            # GetCompanies(product, page)
-            break
-        p.close()
-
-        while True:
-            if results:
-                res = results.pop()
-                if res.ready():
-                    res.get().save()
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    ents = future.result()
+                except Exception as exc:
+                    print('generated an exception :%s' % (exc))
                 else:
-                    results.insert(0, res)
-            else:
-                time.sleep(1)
+                    for ent in ents:
+                        ent.save()
+                        # print(ent.company_name)
+                        # print(ent.company_addr)
+                        # print(ent.company_phone_number)
+                        # print(ent.company_fax)
+                        # print(ent.company_postcode)
+                        # print(ent.company_mobile_phone)
+                        # print(ent.company_contacts)
+                        # print(ent.company_website)
+
+        # p = multiprocessing.Pool(processes=4)
+        # results = []
+        # for page in pages:
+
+        #     try:
+        #         res = p.apply_async(GetCompanies,
+        #                             args=(product, page))
+        #         results.append(res)
+        #     except Exception as e:
+        #         print(str(e))
+
+        #     # GetCompanies(product, page)
+        #     break
+        # p.close()
+
+        # while True:
+        #     if results:
+        #         res = results.pop()
+        #         if res.ready():
+        #             res.get().save()
+        #         else:
+        #             results.insert(0, res)
+        #     else:
+        #         time.sleep(1)
 
     def searchSupplier(self, keywords):
         url = 'http://s.1688.com/company/company_search.htm'

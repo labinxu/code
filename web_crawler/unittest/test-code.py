@@ -2,11 +2,11 @@ import sys
 if '../' not in sys.path:
         sys.path.append('../')
 
-from utils.dbhelper import DBHelper
-dbhelper = DBHelper('c:\\tmp.db')
-sql = "Drop table if exists `student`"
-dbhelper.execute(sql)
-dbhelper.commit()
+# from utils.dbhelper import DBHelper
+# dbhelper = DBHelper('c:\\tmp.db')
+# sql = "Drop table if exists `student`"
+# dbhelper.execute(sql)
+# dbhelper.commit()
 
 create_table_sql = '''CREATE TABLE if not exists `student` (
                           `id` int(11) NOT NULL,
@@ -17,10 +17,15 @@ create_table_sql = '''CREATE TABLE if not exists `student` (
                           `phone` varchar(20) DEFAULT NULL,
                            PRIMARY KEY (`id`)
                         )'''
-dbhelper.execute(create_table_sql)
-dbhelper.commit()
-sql = "insert into student(id, name,age,phone) values(1,'ali',12,12345)"
-dbhelper.execute(sql)
-dbhelper.commit()
-sql = "select * from student"
-print(dbhelper.select(sql))
+# dbhelper.execute(create_table_sql)
+# dbhelper.commit()
+# sql = "insert into student(id, name,age,phone) values(1,'ali',12,12345)"
+# dbhelper.execute(sql)
+# dbhelper.commit()
+# sql = "select * from student"
+# print(dbhelper.select(sql))
+
+
+from random import randint
+from time import sleep
+from Queue import Queue

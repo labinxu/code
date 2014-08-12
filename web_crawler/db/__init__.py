@@ -125,4 +125,3 @@ class DBModel(with_metaclass(ModelBase)):
         else:
             print('error')
             raise DBException('dbhelper not initial')
-
