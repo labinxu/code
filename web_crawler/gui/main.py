@@ -1,13 +1,37 @@
 from PyQt5 import QtWidgets
-from dialog import Ui_Dialog
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtWidgets import QAction, QMenu
+from login import Ui_Dialog
+from mainwindow import Ui_MainWindow
 
 
-class MainWindow(QtWidgets.QDialog):
+class DlgLogin(QtWidgets.QDialog):
     def __init__(self, parent=None):
-        super(MainWindow, self).__init__(parent)
+        super(DlgLogin, self).__init__(parent)
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
+        self.ui.edPasswd.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.ui.edUserName.setText('set text')
+        #self.ui.btOk.clicked.connect(self.onOk)
 
+    @pyqtSlot()
+    def on_btOk_clicked(self):
+        self.ui.lbUserName.setText(self.ui.edUserName.text())
+        self.ui.lbPasswd.setText(self.ui.edPasswd.text())
+
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        super(MainWindow, self).__init__(parent)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.counter = 0
+
+    @pyqtSlot()
+    def on_actionNew_Task_triggered(self):
+        self.counter += 1
+        self.ui.teOutPutWindow.setText('new task %s' % self.counter)
 
 def main():
     import sys

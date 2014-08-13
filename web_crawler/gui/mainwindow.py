@@ -1,0 +1,98 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file 'mainwindow.ui'
+#
+# Created: Wed Aug 13 16:16:19 2014
+#      by: PyQt5 UI code generator 5.3.1
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class Ui_MainWindow(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(959, 609)
+        MainWindow.setIconSize(QtCore.QSize(32, 32))
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.teOutPutWindow = QtWidgets.QTextEdit(self.centralwidget)
+        self.teOutPutWindow.setGeometry(QtCore.QRect(10, 500, 941, 71))
+        self.teOutPutWindow.setObjectName("teOutPutWindow")
+        self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
+        self.groupBox.setGeometry(QtCore.QRect(10, 0, 241, 491))
+        self.groupBox.setObjectName("groupBox")
+        self.tabTasks = QtWidgets.QTabWidget(self.groupBox)
+        self.tabTasks.setGeometry(QtCore.QRect(10, 20, 221, 461))
+        self.tabTasks.setObjectName("tabTasks")
+        self.tabTaskRuning = QtWidgets.QWidget()
+        self.tabTaskRuning.setAutoFillBackground(False)
+        self.tabTaskRuning.setObjectName("tabTaskRuning")
+        self.tabTasks.addTab(self.tabTaskRuning, "")
+        self.tabTaskCompleted = QtWidgets.QWidget()
+        self.tabTaskCompleted.setObjectName("tabTaskCompleted")
+        self.tabTasks.addTab(self.tabTaskCompleted, "")
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 959, 21))
+        self.menubar.setObjectName("menubar")
+        self.menuFile = QtWidgets.QMenu(self.menubar)
+        self.menuFile.setObjectName("menuFile")
+        self.menuExport = QtWidgets.QMenu(self.menuFile)
+        self.menuExport.setObjectName("menuExport")
+        self.menu = QtWidgets.QMenu(self.menubar)
+        self.menu.setObjectName("menu")
+        self.menu_2 = QtWidgets.QMenu(self.menubar)
+        self.menu_2.setObjectName("menu_2")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+        self.actionLogin = QtWidgets.QAction(MainWindow)
+        self.actionLogin.setObjectName("actionLogin")
+        self.actionTo_Excel = QtWidgets.QAction(MainWindow)
+        self.actionTo_Excel.setObjectName("actionTo_Excel")
+        self.actionNew_Task = QtWidgets.QAction(MainWindow)
+        self.actionNew_Task.setShortcutContext(QtCore.Qt.ApplicationShortcut)
+        self.actionNew_Task.setObjectName("actionNew_Task")
+        self.actionRegiste = QtWidgets.QAction(MainWindow)
+        self.actionRegiste.setObjectName("actionRegiste")
+        self.actionLogout = QtWidgets.QAction(MainWindow)
+        self.actionLogout.setObjectName("actionLogout")
+        self.actionTo_File = QtWidgets.QAction(MainWindow)
+        self.actionTo_File.setObjectName("actionTo_File")
+        self.menuExport.addAction(self.actionTo_Excel)
+        self.menuExport.addAction(self.actionTo_File)
+        self.menuFile.addAction(self.actionNew_Task)
+        self.menuFile.addAction(self.menuExport.menuAction())
+        self.menu_2.addAction(self.actionRegiste)
+        self.menu_2.addAction(self.actionLogin)
+        self.menu_2.addAction(self.actionLogout)
+        self.menubar.addAction(self.menuFile.menuAction())
+        self.menubar.addAction(self.menu_2.menuAction())
+        self.menubar.addAction(self.menu.menuAction())
+
+        self.retranslateUi(MainWindow)
+        self.tabTasks.setCurrentIndex(0)
+        MainWindow.destroyed.connect(MainWindow.close)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "QT"))
+        self.groupBox.setTitle(_translate("MainWindow", "Tasks"))
+        self.tabTasks.setTabText(self.tabTasks.indexOf(self.tabTaskRuning), _translate("MainWindow", "Tab 1"))
+        self.tabTasks.setTabText(self.tabTasks.indexOf(self.tabTaskCompleted), _translate("MainWindow", "Tab 2"))
+        self.menuFile.setTitle(_translate("MainWindow", "文件"))
+        self.menuExport.setTitle(_translate("MainWindow", "Export"))
+        self.menu.setTitle(_translate("MainWindow", "帮助"))
+        self.menu_2.setTitle(_translate("MainWindow", "用户"))
+        self.actionLogin.setText(_translate("MainWindow", "Login"))
+        self.actionTo_Excel.setText(_translate("MainWindow", "To Excel"))
+        self.actionNew_Task.setText(_translate("MainWindow", "New Task"))
+        self.actionNew_Task.setShortcut(_translate("MainWindow", "Ctrl+N"))
+        self.actionRegiste.setText(_translate("MainWindow", "Registe"))
+        self.actionRegiste.setShortcut(_translate("MainWindow", "Ctrl+R"))
+        self.actionLogout.setText(_translate("MainWindow", "Logout"))
+        self.actionTo_File.setText(_translate("MainWindow", "To File"))
+
