@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QKeySequence
+# from PyQt5.QtGui import QKeySequence
 from PyQt5.QtCore import pyqtSlot
-from PyQt5.QtWidgets import QAction, QMenu
+# from PyQt5.QtWidgets import QAction, QMenu
 from login import Ui_Dialog
 from mainwindow import Ui_MainWindow
 
@@ -13,7 +13,7 @@ class DlgLogin(QtWidgets.QDialog):
         self.ui.setupUi(self)
         self.ui.edPasswd.setEchoMode(QtWidgets.QLineEdit.Password)
         self.ui.edUserName.setText('set text')
-        #self.ui.btOk.clicked.connect(self.onOk)
+        # self.ui.btOk.clicked.connect(self.onOk)
 
     @pyqtSlot()
     def on_btOk_clicked(self):
@@ -26,17 +26,16 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.counter = 0
-
+        
     @pyqtSlot()
     def on_actionNew_Task_triggered(self):
-        self.counter += 1
-        self.ui.teOutPutWindow.setText('new task %s' % self.counter)
+        self.ui.listRunningTasks.addItem('xxx')
+
 
 def main():
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
+    window = DlgLogin() # MainWindow()
     window.show()
     sys.exit(app.exec_())
 
