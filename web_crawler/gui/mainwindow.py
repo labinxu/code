@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
 #
-# Created: Wed Aug 13 21:01:47 2014
+# Created: Thu Aug 14 18:49:13 2014
 #      by: PyQt5 UI code generator 5.3.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,12 +12,12 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(637, 543)
+        MainWindow.resize(842, 687)
         MainWindow.setIconSize(QtCore.QSize(32, 32))
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayoutWidget_4 = QtWidgets.QWidget(self.centralwidget)
-        self.horizontalLayoutWidget_4.setGeometry(QtCore.QRect(10, 10, 611, 481))
+        self.horizontalLayoutWidget_4.setGeometry(QtCore.QRect(10, 30, 821, 541))
         self.horizontalLayoutWidget_4.setObjectName("horizontalLayoutWidget_4")
         self.gdlyMain = QtWidgets.QGridLayout(self.horizontalLayoutWidget_4)
         self.gdlyMain.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
@@ -27,7 +27,7 @@ class Ui_MainWindow(object):
         self.groupBox.setTitle("")
         self.groupBox.setObjectName("groupBox")
         self.horizontalLayoutWidget_3 = QtWidgets.QWidget(self.groupBox)
-        self.horizontalLayoutWidget_3.setGeometry(QtCore.QRect(220, 10, 381, 401))
+        self.horizontalLayoutWidget_3.setGeometry(QtCore.QRect(240, 10, 551, 501))
         self.horizontalLayoutWidget_3.setObjectName("horizontalLayoutWidget_3")
         self.hzlyTbwResult = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_3)
         self.hzlyTbwResult.setContentsMargins(5, 5, 5, 5)
@@ -48,7 +48,7 @@ class Ui_MainWindow(object):
         self.hzlyTbwResult.addWidget(self.tbwResult)
         self.hzlyTbwResult.setStretch(0, 1)
         self.horizontalLayoutWidget_5 = QtWidgets.QWidget(self.groupBox)
-        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(10, 10, 201, 401))
+        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(10, 10, 221, 501))
         self.horizontalLayoutWidget_5.setObjectName("horizontalLayoutWidget_5")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_5)
         self.horizontalLayout.setContentsMargins(5, 5, 5, 5)
@@ -64,7 +64,7 @@ class Ui_MainWindow(object):
         self.tabTaskRuning.setAutoFillBackground(False)
         self.tabTaskRuning.setObjectName("tabTaskRuning")
         self.horizontalLayoutWidget = QtWidgets.QWidget(self.tabTaskRuning)
-        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 181, 361))
+        self.horizontalLayoutWidget.setGeometry(QtCore.QRect(0, 0, 201, 461))
         self.horizontalLayoutWidget.setObjectName("horizontalLayoutWidget")
         self.hzlyRunningTask = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget)
         self.hzlyRunningTask.setContentsMargins(5, 5, 5, 5)
@@ -76,7 +76,7 @@ class Ui_MainWindow(object):
         self.tabTaskCompleted = QtWidgets.QWidget()
         self.tabTaskCompleted.setObjectName("tabTaskCompleted")
         self.horizontalLayoutWidget_2 = QtWidgets.QWidget(self.tabTaskCompleted)
-        self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 191, 371))
+        self.horizontalLayoutWidget_2.setGeometry(QtCore.QRect(0, 0, 201, 461))
         self.horizontalLayoutWidget_2.setObjectName("horizontalLayoutWidget_2")
         self.hzlyCompletedTask = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_2)
         self.hzlyCompletedTask.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
@@ -87,21 +87,20 @@ class Ui_MainWindow(object):
         self.hzlyCompletedTask.addWidget(self.listCompletedTasks)
         self.tabTasks.addTab(self.tabTaskCompleted, "")
         self.horizontalLayout.addWidget(self.tabTasks)
-        self.verticalLayoutWidget = QtWidgets.QWidget(self.groupBox)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(0, 422, 591, 83))
-        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
-        self.vtlyOutput = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
-        self.vtlyOutput.setSpacing(6)
-        self.vtlyOutput.setContentsMargins(5, 5, 5, 5)
-        self.vtlyOutput.setObjectName("vtlyOutput")
-        self.listOutput = QtWidgets.QListWidget(self.verticalLayoutWidget)
-        self.listOutput.setObjectName("listOutput")
-        self.vtlyOutput.addWidget(self.listOutput)
         self.gdlyMain.addWidget(self.groupBox, 0, 0, 1, 1)
         self.gdlyMain.setRowStretch(0, 1)
+        self.horizontalLayoutWidget_6 = QtWidgets.QWidget(self.centralwidget)
+        self.horizontalLayoutWidget_6.setGeometry(QtCore.QRect(10, 580, 821, 75))
+        self.horizontalLayoutWidget_6.setObjectName("horizontalLayoutWidget_6")
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_6)
+        self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.ltOutput = QtWidgets.QListWidget(self.horizontalLayoutWidget_6)
+        self.ltOutput.setObjectName("ltOutput")
+        self.horizontalLayout_2.addWidget(self.ltOutput)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 637, 23))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 842, 23))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -144,9 +143,9 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuView.menuAction())
         self.menubar.addAction(self.menuUser.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
+
         self.retranslateUi(MainWindow)
-        self.tabTasks.setCurrentIndex(0)
-        MainWindow.destroyed.connect(MainWindow.close)
+        self.tabTasks.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):

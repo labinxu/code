@@ -28,14 +28,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         
     @pyqtSlot()
+    def on_actionLogin_triggered(self):
+        # actionLogin
+        dlgLogin = DlgLogin()
+        dlgLogin.exec_()
+
+    @pyqtSlot()
     def on_actionNew_Task_triggered(self):
         self.ui.listRunningTasks.addItem('xxx')
+        
 
 
 def main():
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    window = DlgLogin() # MainWindow()
+    window = MainWindow()
     window.show()
     sys.exit(app.exec_())
 
