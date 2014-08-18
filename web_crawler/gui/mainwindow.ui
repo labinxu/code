@@ -261,7 +261,7 @@
      <x>0</x>
      <y>0</y>
      <width>842</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -365,6 +365,22 @@
     <hint type="sourcelabel">
      <x>530</x>
      <y>318</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>420</x>
+     <y>343</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MainWindow</sender>
+   <signal>destroyed()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>420</x>
+     <y>343</y>
     </hint>
     <hint type="destinationlabel">
      <x>420</x>

@@ -51,7 +51,7 @@ class ModelBase(type):
             dct['__table_name__'] = '%s_table' % name
 
             sqlstr = 'create table "%s" (' % dct['__table_name__']
-
+            sqlstr += '"id" integer PRIMARY KEY AUTOINCREMENT, '
             for name, var in attrs.items():
                 if isinstance(var, DBField):
                     sqlstr += '"%s" %s, ' % (name, var)
@@ -109,20 +109,37 @@ class DBModel(with_metaclass(ModelBase)):
             self.__dict__[name] = var
 
     def save(self):
+
         attrs = dict((name, value) for name,
                      value in self.__dict__.items()
                      if not name.startswith('__'))
-        sqlstr = 'insert into %s(%s) values(%s)'
         titles = ''
         values = ''
-        for title, var in attrs.items():
-            titles += '%s, ' % title
-            values += '"%s", ' % var
-        sqlstr = sqlstr % (self.__table_name__,
-                           titles[:-2], values[:-2])
-        # print(DBModel.getDBHelper())
+        hasId = False
+        sqlstr = ''
+        if 'id' in self.__dict__.keys():
+            sqlstr = 'update %s set ' % self.__table_name__
+            for title, var in attrs.items():
+                if not title == 'id':
+                    titles += '%s="%s", ' % (title, var)
+            titles = titles[:-2]
+            titles += ' where id=%s' % self.__dict__['id']
+            sqlstr += titles
+            hasId = True
+        else:
+            sqlstr = 'insert into %s(%s) values(%s)'
+            for title, var in attrs.items():
+                titles += '%s, ' % title
+                values += '"%s", ' % var
+
+            sqlstr = sqlstr % (self.__table_name__,
+                               titles[:-2], values[:-2])
+        print(sqlstr)
         if DBModel.getDBHelper():
             DBModel.getDBHelper().execute(sqlstr)
+            if not hasId:
+                sqlstr = "select last_insert_rowid()"
+                ids = DBModel.getDBHelper().select(sqlstr)
+                self.__dict__['id'] = ids[0][0]
         else:
-            print('error')
             raise DBException('dbhelper not initial')

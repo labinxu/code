@@ -12,6 +12,7 @@ import threading
 import time
 from utils import debug
 
+
 class DLGLogin(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(DLGLogin, self).__init__(parent)
@@ -74,19 +75,23 @@ class MainWindow(QtWidgets.QMainWindow):
                 task.save()
                 self.taskManager.startTask(task)
 
-            for task, process in self.taskManager.running_tasks.items():
+            while self.taskManager.running_tasks:
+                task, process = self.taskManager.running_tasks.popitem()
                 if not process.is_alive():
                     task.task_status = '1'
                     task.save()
                     self.taskManager.completed_tasks.append(task)
+                else:
+                    self.taskManager.running_tasks[task] = process
+
             locker.release()
             time.sleep(2)
+            print('waiting task')
 
     @pyqtSlot()
     def on_actionNew_Task_triggered(self):
         dlgNewTask = DLGNewTask(self)
         dlgNewTask.exec_()
-        
         searchWords = dlgNewTask.ui.leSearchWords.text()
         taskName = dlgNewTask.ui.leTaskName.text()
         siteName = dlgNewTask.ui.leSiteName.text()
@@ -107,7 +112,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def itemChanged(self, row, col):
         self.ui.ltOutput.addItem('item %s, %s' % (col, row))
-
+    
+    def close(self):
+        print('close')
 
 def main():
     import sys
