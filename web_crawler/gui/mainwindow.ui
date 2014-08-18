@@ -96,7 +96,7 @@
             <number>5</number>
            </property>
            <property name="columnCount">
-            <number>5</number>
+            <number>6</number>
            </property>
            <row>
             <property name="text">
@@ -110,6 +110,11 @@
            <column>
             <property name="text">
              <string>公司名</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>省份</string>
             </property>
            </column>
            <column/>
@@ -295,6 +300,7 @@
     <property name="title">
      <string>编辑</string>
     </property>
+    <addaction name="actionInsert"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -342,11 +348,33 @@
     <string>To File</string>
    </property>
   </action>
+  <action name="actionInsert">
+   <property name="text">
+    <string>Insert</string>
+   </property>
+  </action>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>tbwResult</sender>
+   <signal>cellChanged(int,int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>itemChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>530</x>
+     <y>318</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>420</x>
+     <y>343</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
  <slots>
   <signal>signalNewTask()</signal>
-  <slot>createNewTask()</slot>
+  <slot>itemChanged()</slot>
  </slots>
 </ui>

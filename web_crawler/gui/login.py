@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'login.ui'
 #
-# Created: Wed Aug 13 21:21:56 2014
+# Created: Sat Aug 16 23:38:32 2014
 #      by: PyQt5 UI code generator 5.3.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -51,11 +51,11 @@ class Ui_Dialog(object):
         self.btCancel.setFont(font)
         self.btCancel.setObjectName("btCancel")
         self.edPasswd = QtWidgets.QLineEdit(self.groupBox)
-        self.edPasswd.setGeometry(QtCore.QRect(110, 50, 161, 24))
+        self.edPasswd.setGeometry(QtCore.QRect(110, 120, 161, 24))
         self.edPasswd.setInputMethodHints(QtCore.Qt.ImhNone)
         self.edPasswd.setObjectName("edPasswd")
         self.edUserName = QtWidgets.QLineEdit(self.groupBox)
-        self.edUserName.setGeometry(QtCore.QRect(110, 120, 161, 24))
+        self.edUserName.setGeometry(QtCore.QRect(110, 50, 161, 24))
         font = QtGui.QFont()
         font.setFamily("Arial")
         self.edUserName.setFont(font)
