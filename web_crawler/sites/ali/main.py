@@ -1,5 +1,6 @@
 # -*- coding:utf-8-*-
 import re
+import os
 import sys
 import concurrent.futures
 if '../' not in sys.path:
@@ -13,10 +14,11 @@ if '../../../' not in sys.path:
 from sites.ali.product import ComanyBySupplier
 from sites.ali.product import CompanyFromProduct
 from common.debug import debug
-import multiprocessing
 import socket
 from typesdefine.data_types import WebPage
 from bs4 import BeautifulSoup
+from typesdefine import Enterprise
+from db import DBHelper
 
 
 def GetParser():
@@ -67,6 +69,7 @@ class AliSite(object):
         while page:
             page = product.getNextPageData(page)
             pages.append(page)
+            break
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = {executor.submit(GetCompanies,
                                        product,
@@ -80,15 +83,6 @@ class AliSite(object):
                 else:
                     for ent in ents:
                         ent.save()
-                        # print(ent.company_name)
-                        # print(ent.company_addr)
-                        # print(ent.company_phone_number)
-                        # print(ent.company_fax)
-                        # print(ent.company_postcode)
-                        # print(ent.company_mobile_phone)
-                        # print(ent.company_contacts)
-                        # print(ent.company_website)
-
         # p = multiprocessing.Pool(processes=4)
         # results = []
         # for page in pages:
@@ -127,13 +121,18 @@ class AliSite(object):
             else:
                 debug.output('%s, %s' % (company.companName, company.url))
 
-    def startTask(self, product=None, supplier=None):
+    def startTask(self, taskName, product=None, supplier=None):
+        dbname = '%s.db' % taskName
+        if os.path.exists(dbname):
+            DBHelper.getInstance(dbname)
+        else:
+            dbhelper = DBHelper.getInstance(dbname)
+            dbhelper.execute(Enterprise.__init_table__)
+
         if product:
             self.searchProduct(product)
-        elif supplier:
-            self.searchSupplier(supplier)
         else:
-            pass
+            self.searchSupplier(supplier)
 
 
 def GetCompanies(product, page):

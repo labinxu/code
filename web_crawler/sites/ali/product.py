@@ -205,4 +205,5 @@ class CompanyFromProduct(CompanyBySearch):
             ent = Enterprise(company_name=name, company_website=website)
             ent = self.getDetails(ent)
             results.append(ent)
+            break
         return results

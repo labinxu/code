@@ -90,6 +90,10 @@ class DBHelper(DBOperator):
             DBHelper._instance = DBOperator(dbname)
         return DBHelper._instance
 
+    @staticmethod
+    def reset():
+        DBHelper._instance = None
+
 
 class DBModel(with_metaclass(ModelBase)):
 
@@ -98,7 +102,7 @@ class DBModel(with_metaclass(ModelBase)):
         try:
             return DBHelper.getInstance()
         except Exception as e:
-            print('get DB helper error' % str(e))
+            print('get DB helper error %s' % str(e))
 
     def __init__(self, *args, **kwargs):
         for name, var in kwargs.items():
@@ -112,15 +116,12 @@ class DBModel(with_metaclass(ModelBase)):
         titles = ''
         values = ''
         for title, var in attrs.items():
-            if not var:
-                var = 'not provide'
             titles += '%s, ' % title
             values += '"%s", ' % var
         sqlstr = sqlstr % (self.__table_name__,
                            titles[:-2], values[:-2])
         # print(DBModel.getDBHelper())
         if DBModel.getDBHelper():
-            
             DBModel.getDBHelper().execute(sqlstr)
         else:
             print('error')

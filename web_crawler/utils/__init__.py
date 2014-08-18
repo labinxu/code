@@ -4,6 +4,14 @@ import logging
 import sys
 
 
+class Executor(object):
+    def __init__(self, debug=None):
+        self.debug = debug
+
+    def execute(self, command, timeout=None):
+        pass
+
+
 class Debug():
     '''
     Debug info print( and write the log into files

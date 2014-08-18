@@ -1,23 +1,47 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import pyqtSlot
-from login import Ui_Dialog
+import login
+import dlgnewtask
 from mainwindow import Ui_MainWindow
+import sys
+if '../' not in sys.path:
+    sys.path.append('../')
+from manager.taskmanager import TaskManager
+from typesdefine import Task
+import threading
+import time
+from utils import debug
 
-
-class DlgLogin(QtWidgets.QDialog):
-    def __init__(self, parentWindow=None, parent=None):
-        super(DlgLogin, self).__init__(parent)
-        self.ui = Ui_Dialog()
+class DLGLogin(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super(DLGLogin, self).__init__(parent)
+        self.ui = login.Ui_Dialog()
         self.ui.setupUi(self)
         self.ui.edPasswd.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.parentWindow = parentWindow
 
     @pyqtSlot()
     def on_btOk_clicked(self):
-        self.parentWindow.ui.ltOutput.addItem(self.ui.edUserName.text())
         self.accept()
 
 
+##################################################################
+class DLGNewTask(QtWidgets.QDialog):
+    '''define the properties of the new task'''
+
+    def __init__(self, parent=None):
+        super(DLGNewTask, self).__init__(parent)
+        self.ui = dlgnewtask.Ui_NewTask()
+        self.ui.setupUi(self)
+        self.ui.leTaskName.setText('task 1')
+        self.ui.leSiteName.setText('ali')
+        self.ui.leSearchWords.setText('keyboard')
+
+    @pyqtSlot()
+    def on_pbSearch_clicked(self):
+        self.accept()
+
+
+#################################################################
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -25,20 +49,53 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.ui.tbwResult.setRowCount(10)
         self.ui.tbwResult.setColumnCount(7)
+        self.runningTasksLocker = threading.Lock()
 
     @pyqtSlot()
     def on_actionLogin_triggered(self):
         # actionLogin
-        dlgLogin = DlgLogin(self)
+        dlgLogin = DLGLogin(self)
         dlgLogin.exec_()
+        self.ui.ltOutput.addItem(dlgLogin.ui.edPasswd.text())
+        self.ui.ltOutput.addItem(dlgLogin.ui.edUserName.text())
+
+    def newTask(self, locker, newTask):
+        locker.acquire()
+        self.taskManager = TaskManager.Instance('taskdb.sqlite3')
+        self.taskManager.startTask(newTask)
+        locker.release()
+        while True:
+            locker.acquire()
+            status = self.taskManager.isAlive(newTask.task_name)
+            locker.release()
+            if not status:
+                newTask.task_status = '1'
+                newTask.save()
+                debug.output('task %s finised' % newTask.task_name)
+                break
+            time.sleep(20)
 
     @pyqtSlot()
     def on_actionNew_Task_triggered(self):
-        self.ui.listRunningTasks.addItem('xxx')
+        dlgNewTask = DLGNewTask(self)
+        dlgNewTask.exec_()
+        
+        searchWords = dlgNewTask.ui.leSearchWords.text()
+        taskName = dlgNewTask.ui.leTaskName.text()
+        siteName = dlgNewTask.ui.leSiteName.text()
+        
+        newTask = Task(task_name=taskName,
+                       task_site_name=siteName,
+                       task_search_words=searchWords,
+                       task_status=0)
+
+        self.ui.listRunningTasks.addItem(taskName)
+        t = threading.Thread(target=self.newTask,
+                             args=(self.runningTasksLocker, newTask))
+        t.start()
 
     @pyqtSlot()
     def on_actionInsert_triggered(self):
-
         newItem = QtWidgets.QTableWidgetItem('test')
         self.ui.tbwResult.setItem(1, 1, newItem)
 

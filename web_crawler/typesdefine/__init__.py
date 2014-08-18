@@ -17,3 +17,11 @@ class Enterprise(DBModel):
     company_website = CharField(max_length=100)
     company_addr = CharField(max_length=100)
     company_details = CharField(max_length=200)
+
+
+class Task(DBModel):
+    task_name = CharField(max_length=20)
+    task_search_words = CharField(max_length=20)
+    task_site_name = CharField(max_length=10)
+    task_web_url = CharField(max_length=100)
+    task_status = CharField(max_length=2)
