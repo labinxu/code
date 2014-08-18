@@ -17,7 +17,7 @@ class TaskManager(object):
 
     def __init__(self, taskdb):
         self.running_tasks = {}
-        self.completed_tasks = {}
+        self.completed_tasks = []
 
         if not os.path.exists(taskdb):
             self.taskDb = DBHelper.getInstance(taskdb)
@@ -36,12 +36,11 @@ class TaskManager(object):
         return self.completed_tasks
 
     def startTask(self, task):
-        task.save()
         crawler = self.getSiteParser(task.task_site_name)
         process = Process(target=crawler.startTask,
                           args=(task.task_name, task.task_search_words, None))
         process.start()
-        self.running_tasks[task.task_name] = process
+        self.running_tasks[task] = process
 
     def isAlive(self, task_name):
         if task_name in self.running_tasks.keys():

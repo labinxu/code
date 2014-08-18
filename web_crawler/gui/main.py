@@ -50,6 +50,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tbwResult.setRowCount(10)
         self.ui.tbwResult.setColumnCount(7)
         self.runningTasksLocker = threading.Lock()
+        self.stop = False
+        self.tasks = []
+
+        t = threading.Thread(target=self.taskMonitor,
+                             args=(self.runningTasksLocker, ))
+        t.start()
 
     @pyqtSlot()
     def on_actionLogin_triggered(self):
@@ -59,21 +65,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.ltOutput.addItem(dlgLogin.ui.edPasswd.text())
         self.ui.ltOutput.addItem(dlgLogin.ui.edUserName.text())
 
-    def newTask(self, locker, newTask):
-        locker.acquire()
+    def taskMonitor(self, locker):
         self.taskManager = TaskManager.Instance('taskdb.sqlite3')
-        self.taskManager.startTask(newTask)
-        locker.release()
-        while True:
+        while not self.stop:
             locker.acquire()
-            status = self.taskManager.isAlive(newTask.task_name)
+            if self.tasks:
+                task = self.tasks.pop()
+                task.save()
+                self.taskManager.startTask(task)
+
+            for task, process in self.taskManager.running_tasks.items():
+                if not process.is_alive():
+                    task.task_status = '1'
+                    task.save()
+                    self.taskManager.completed_tasks.append(task)
             locker.release()
-            if not status:
-                newTask.task_status = '1'
-                newTask.save()
-                debug.output('task %s finised' % newTask.task_name)
-                break
-            time.sleep(20)
+            time.sleep(2)
 
     @pyqtSlot()
     def on_actionNew_Task_triggered(self):
@@ -83,16 +90,15 @@ class MainWindow(QtWidgets.QMainWindow):
         searchWords = dlgNewTask.ui.leSearchWords.text()
         taskName = dlgNewTask.ui.leTaskName.text()
         siteName = dlgNewTask.ui.leSiteName.text()
-        
         newTask = Task(task_name=taskName,
                        task_site_name=siteName,
                        task_search_words=searchWords,
                        task_status=0)
 
         self.ui.listRunningTasks.addItem(taskName)
-        t = threading.Thread(target=self.newTask,
-                             args=(self.runningTasksLocker, newTask))
-        t.start()
+        self.runningTasksLocker.acquire()
+        self.tasks.append(newTask)
+        self.runningTasksLocker.release()
 
     @pyqtSlot()
     def on_actionInsert_triggered(self):
