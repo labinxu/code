@@ -261,7 +261,7 @@
      <x>0</x>
      <y>0</y>
      <width>842</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -277,6 +277,8 @@
     </widget>
     <addaction name="actionNew_Task"/>
     <addaction name="menuExport"/>
+    <addaction name="actionStop"/>
+    <addaction name="actionStopAll"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -353,6 +355,16 @@
     <string>Insert</string>
    </property>
   </action>
+  <action name="actionStop">
+   <property name="text">
+    <string>Stop</string>
+   </property>
+  </action>
+  <action name="actionStopAll">
+   <property name="text">
+    <string>StopAll</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections>
@@ -365,22 +377,6 @@
     <hint type="sourcelabel">
      <x>530</x>
      <y>318</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>420</x>
-     <y>343</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>MainWindow</sender>
-   <signal>destroyed()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>420</x>
-     <y>343</y>
     </hint>
     <hint type="destinationlabel">
      <x>420</x>

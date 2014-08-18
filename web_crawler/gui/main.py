@@ -53,10 +53,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.runningTasksLocker = threading.Lock()
         self.stop = False
         self.tasks = []
-
-        t = threading.Thread(target=self.taskMonitor,
-                             args=(self.runningTasksLocker, ))
-        t.start()
+        threading.Thread(target=self.taskMonitor,
+                         args=(self.runningTasksLocker, )).start()
 
     @pyqtSlot()
     def on_actionLogin_triggered(self):
@@ -67,6 +65,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.ltOutput.addItem(dlgLogin.ui.edUserName.text())
 
     def taskMonitor(self, locker):
+        print('enter')
         self.taskManager = TaskManager.Instance('taskdb.sqlite3')
         while not self.stop:
             locker.acquire()
@@ -83,10 +82,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.taskManager.completed_tasks.append(task)
                 else:
                     self.taskManager.running_tasks[task] = process
-
             locker.release()
             time.sleep(2)
-            print('waiting task')
 
     @pyqtSlot()
     def on_actionNew_Task_triggered(self):
@@ -106,15 +103,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self.runningTasksLocker.release()
 
     @pyqtSlot()
+    def on_actionStop_triggered(self):
+        self.stop = True
+
+    @pyqtSlot()
+    def on_actionStopAll_triggered(self):
+        if self.stop:
+            self.stop = False
+            self.runningTasksLocker = threading.Lock()
+            threading.Thread(target=self.taskMonitor,
+                             args=(self.runningTasksLocker, )).start()
+
+    @pyqtSlot()
     def on_actionInsert_triggered(self):
         newItem = QtWidgets.QTableWidgetItem('test')
         self.ui.tbwResult.setItem(1, 1, newItem)
 
     def itemChanged(self, row, col):
         self.ui.ltOutput.addItem('item %s, %s' % (col, row))
-    
-    def close(self):
-        print('close')
+
+    def closeEvent(self, event):
+        self.stop = True
+        event.accept()
+
 
 def main():
     import sys

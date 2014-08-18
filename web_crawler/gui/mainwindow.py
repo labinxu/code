@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
 #
-# Created: Mon Aug 18 18:30:32 2014
+# Created: Mon Aug 18 20:04:27 2014
 #      by: PyQt5 UI code generator 5.3.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -106,7 +106,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addWidget(self.ltOutput)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 842, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 842, 23))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -139,10 +139,16 @@ class Ui_MainWindow(object):
         self.actionTo_File.setObjectName("actionTo_File")
         self.actionInsert = QtWidgets.QAction(MainWindow)
         self.actionInsert.setObjectName("actionInsert")
+        self.actionStop = QtWidgets.QAction(MainWindow)
+        self.actionStop.setObjectName("actionStop")
+        self.actionStopAll = QtWidgets.QAction(MainWindow)
+        self.actionStopAll.setObjectName("actionStopAll")
         self.menuExport.addAction(self.actionTo_Excel)
         self.menuExport.addAction(self.actionTo_File)
         self.menuFile.addAction(self.actionNew_Task)
         self.menuFile.addAction(self.menuExport.menuAction())
+        self.menuFile.addAction(self.actionStop)
+        self.menuFile.addAction(self.actionStopAll)
         self.menuUser.addAction(self.actionRegiste)
         self.menuUser.addAction(self.actionLogin)
         self.menuUser.addAction(self.actionLogout)
@@ -186,4 +192,6 @@ class Ui_MainWindow(object):
         self.actionLogout.setText(_translate("MainWindow", "Logout"))
         self.actionTo_File.setText(_translate("MainWindow", "To File"))
         self.actionInsert.setText(_translate("MainWindow", "Insert"))
+        self.actionStop.setText(_translate("MainWindow", "Stop"))
+        self.actionStopAll.setText(_translate("MainWindow", "StopAll"))
 
