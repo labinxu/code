@@ -59,14 +59,15 @@ class MainWindow(QtWidgets.QMainWindow):
     def guiTasksMonitor(self):
         try:
             self.taskManager.resetDb('taskdb.sqlite3')
-            print(Task.objects.all())
+            for task in Task.objects().all():
+                print(task.task_name, task.id)
         except:
             pass
         
         try:
             self.taskManager.resetDb('task_1.db')
-            for ent in Enterprise.objects.all():
-                print(ent.company_name)
+            for ent in Enterprise.objects().all():
+                print(ent.company_name, ent.id)
         except:
             pass
 

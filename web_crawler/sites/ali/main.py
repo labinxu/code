@@ -67,9 +67,10 @@ class AliSite(object):
         pages = []
         pages.append(page)
         while page:
+            break
             page = product.getNextPageData(page)
             pages.append(page)
-            break
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = {executor.submit(GetCompanies,
                                        product,

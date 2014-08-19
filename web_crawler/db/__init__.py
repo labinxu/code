@@ -75,79 +75,59 @@ class CharField(DBField):
         return 'varchar(%s) ' % self.max_length
 
 
-class Objects(object):
-    Object = type("Object", (), {})
+def transDBRecToObject(dbret, titles):
+    result = []
+    for item in dbret:
+        attrs = dict(zip(titles, item))
+        object = type('object', (), {})()
+        object.__dict__.update(attrs)
+        result.append(object)
+    return result
 
-    def __init__(self):
-        pass
 
-    @staticmethod
-    def transDBRecToObject(dbret, titles):
-        result = []
-        for item in dbret:
-            attrs = dict(zip(titles, item))
-            object = Objects.Object()
-            object.__dict__.update(attrs)
-            result.append(object)
-        return result
-    
-    @staticmethod
+def all(cls):
     def all():
-        sql = 'select * from %s_table' % Objects.__dict__['modelname']
-        print(sql)
+        titles = ''
+        for t in cls.titles:
+            titles += '%s,' % t
+        sql = 'select %s from %s_table' % (titles[:-1], cls.modelname)
         dbret = DBHelper.getInstance().select(sql)
-        return Objects.transDBRecToObject(dbret, Objects.__dict__['titles'])
-        
-    def __call__(self):
-        print('objects call')
-
-    def filter(self, cond):
-        sql = 'select * from %s_table where %s' % (self.name, cond)
-        return DBHelper.getInstance().select(sql)
+        return transDBRecToObject(dbret, cls.titles)
+    return all()
 
 
 class ModelBase(type):
+    typeMap = {}
 
-    objects = Objects()
-    
     def __new__(cls, name, bases, dct):
         super_new = super(ModelBase, cls).__new__
-        if name == 'NewBase' and dct == {}:
+        if (name == 'NewBase' and dct == {}) or name == 'DBModel':
             return super_new(cls, name, bases, dct)
-            parents = [b for b in bases if isinstance(b, ModelBase) and
-                       not (b.__name__ == 'NewBase' and
-                            b.__mro__ == (b, object))]
-            if not parents:
-                return super_new(cls, name, bases, dct)
-        attrs = dict((name, value) for name,
-                     value in dct.items() if not name.startswith('__'))
-        dct['__table_name__'] = '%s_table' % name
-        print('tablename %s cls %s ' % (name, cls))
-        objattrs = {}
-        try:
-            objattrs = getattr(Objects, 'modelname')
-        except AttributeError:
-            objattrs = {}
-        finally:
-            objattrs.update({name, name})
-            setattr(Objects, 'modelname', objattrs)
 
+        attrs = dict((n, value) for n,
+                     value in dct.items() if not n.startswith('__'))
+
+        dct['__table_name__'] = '%s_table' % name
         sqlstr = 'create table "%s" (' % dct['__table_name__']
         sqlstr += '"id" integer PRIMARY KEY AUTOINCREMENT, '
         titles = ['id']
-        for name, var in attrs.items():
+        for n, var in attrs.items():
             if isinstance(var, DBField):
-                titles.append(name)
-                sqlstr += '"%s" %s, ' % (name, var)
+                titles.append(n)
+                sqlstr += '"%s" %s, ' % (n, var)
+
         dct['__init_table__'] = '%s);' % sqlstr[:-2]
-        objattrs = {}
-        try:
-            objattrs = getattr(Objects, 'titles')
-        except AttributeError:
-            objattrs = {}
-        finally:
-            objattrs.update({name, name})
-            setattr(Objects, 'titles', titles)
+
+        tmptype = type('Obj%s' % name, (), {})
+
+        setattr(tmptype, 'modelname', name)
+        setattr(tmptype, 'titles', titles)
+        setattr(tmptype,
+                'all',
+                classmethod(all))
+
+        ModelBase.typeMap[name] = tmptype
+
         return super(ModelBase, cls).__new__(cls,
                                              name,
                                              bases,
@@ -155,6 +135,12 @@ class ModelBase(type):
 
 
 class DBModel(with_metaclass(ModelBase)):
+
+    @classmethod
+    def objects(cls):
+        def ob():
+            return cls.typeMap[cls.__name__]
+        return ob()
 
     @staticmethod
     def getDBHelper():
