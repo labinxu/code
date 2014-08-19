@@ -55,9 +55,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tasks = []
         threading.Thread(target=self.taskMonitor,
                          args=(self.runningTasksLocker, )).start()
-    
+
     def guiTasksMonitor(self):
-        print('taskdb')
         try:
             self.taskManager.resetDb('taskdb.sqlite3')
             print(Task.objects.all())

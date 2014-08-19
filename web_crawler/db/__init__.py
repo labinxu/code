@@ -3,7 +3,6 @@ import sqlite3
 import sys
 if '../' not in sys.path:
     sys.path.append('../')
-import importlib
 
 
 class DBOperator(object):
@@ -104,14 +103,13 @@ class Objects(object):
 
     def filter(self, cond):
         sql = 'select * from %s_table where %s' % (self.name, cond)
-        
         return DBHelper.getInstance().select(sql)
 
 
 class ModelBase(type):
 
     objects = Objects()
-
+    
     def __new__(cls, name, bases, dct):
         super_new = super(ModelBase, cls).__new__
         if name == 'NewBase' and dct == {}:
@@ -125,7 +123,14 @@ class ModelBase(type):
                      value in dct.items() if not name.startswith('__'))
         dct['__table_name__'] = '%s_table' % name
         print('tablename %s cls %s ' % (name, cls))
-        setattr(Objects, 'modelname', name)
+        objattrs = {}
+        try:
+            objattrs = getattr(Objects, 'modelname')
+        except AttributeError:
+            objattrs = {}
+        finally:
+            objattrs.update({name, name})
+            setattr(Objects, 'modelname', objattrs)
 
         sqlstr = 'create table "%s" (' % dct['__table_name__']
         sqlstr += '"id" integer PRIMARY KEY AUTOINCREMENT, '
@@ -135,7 +140,14 @@ class ModelBase(type):
                 titles.append(name)
                 sqlstr += '"%s" %s, ' % (name, var)
         dct['__init_table__'] = '%s);' % sqlstr[:-2]
-        setattr(Objects, 'titles', titles)
+        objattrs = {}
+        try:
+            objattrs = getattr(Objects, 'titles')
+        except AttributeError:
+            objattrs = {}
+        finally:
+            objattrs.update({name, name})
+            setattr(Objects, 'titles', titles)
         return super(ModelBase, cls).__new__(cls,
                                              name,
                                              bases,
