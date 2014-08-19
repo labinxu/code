@@ -25,6 +25,9 @@ class TaskManager(object):
         else:
             self.taskDb = DBHelper.getInstance(taskdb)
 
+    def resetDb(self, dbname):
+        self.taskDb.reset(dbname)
+
     def getSiteParser(self, siteName):
         module = importlib.import_module('sites.%s.main' % siteName)
         return module.GetParser()

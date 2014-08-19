@@ -7,7 +7,7 @@ import sys
 if '../' not in sys.path:
     sys.path.append('../')
 from manager.taskmanager import TaskManager
-from typesdefine import Task
+from typesdefine import Task, Enterprise
 import threading
 import time
 from utils import debug
@@ -33,7 +33,7 @@ class DLGNewTask(QtWidgets.QDialog):
         super(DLGNewTask, self).__init__(parent)
         self.ui = dlgnewtask.Ui_NewTask()
         self.ui.setupUi(self)
-        self.ui.leTaskName.setText('task 1')
+        self.ui.leTaskName.setText('task_1')
         self.ui.leSiteName.setText('ali')
         self.ui.leSearchWords.setText('keyboard')
 
@@ -55,6 +55,21 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tasks = []
         threading.Thread(target=self.taskMonitor,
                          args=(self.runningTasksLocker, )).start()
+    
+    def guiTasksMonitor(self):
+        print('taskdb')
+        try:
+            self.taskManager.resetDb('taskdb.sqlite3')
+            print(Task.objects.all())
+        except:
+            pass
+        
+        try:
+            self.taskManager.resetDb('task_1.db')
+            for ent in Enterprise.objects.all():
+                print(ent.company_name)
+        except:
+            pass
 
     @pyqtSlot()
     def on_actionLogin_triggered(self):
@@ -65,10 +80,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.ltOutput.addItem(dlgLogin.ui.edUserName.text())
 
     def taskMonitor(self, locker):
-        print('enter')
         self.taskManager = TaskManager.Instance('taskdb.sqlite3')
         while not self.stop:
-            locker.acquire()
+            debug.output('waiting task')
             if self.tasks:
                 task = self.tasks.pop()
                 task.save()
@@ -80,9 +94,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     task.task_status = '1'
                     task.save()
                     self.taskManager.completed_tasks.append(task)
+                    self.guiTasksMonitor()
                 else:
                     self.taskManager.running_tasks[task] = process
-            locker.release()
+                time.sleep(2)
             time.sleep(2)
 
     @pyqtSlot()
@@ -98,9 +113,9 @@ class MainWindow(QtWidgets.QMainWindow):
                        task_status=0)
 
         self.ui.listRunningTasks.addItem(taskName)
-        self.runningTasksLocker.acquire()
+        # self.runningTasksLocker.acquire()
         self.tasks.append(newTask)
-        self.runningTasksLocker.release()
+        # self.runningTasksLocker.release()
 
     @pyqtSlot()
     def on_actionStop_triggered(self):
@@ -125,6 +140,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def closeEvent(self, event):
         self.stop = True
         event.accept()
+
+    def tabTasksClicked(self, index):
+        debug.output('tab %s' % index)
 
 
 def main():

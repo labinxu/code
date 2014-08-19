@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
 #
-# Created: Mon Aug 18 20:04:27 2014
+# Created: Tue Aug 19 10:26:27 2014
 #      by: PyQt5 UI code generator 5.3.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -106,7 +106,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addWidget(self.ltOutput)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 842, 23))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 842, 21))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -162,7 +162,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         self.tabTasks.setCurrentIndex(1)
         self.tbwResult.cellChanged['int','int'].connect(MainWindow.itemChanged)
-        MainWindow.destroyed.connect(MainWindow.close)
+        self.tabTasks.tabBarClicked['int'].connect(MainWindow.tabTasksClicked)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
