@@ -96,6 +96,19 @@ def all(cls):
     return all()
 
 
+def filter(cls, cond):
+    def filter():
+        titles = ''
+        for t in cls.titles:
+            titles += '%s,' % t
+        sql = 'select %s from %s_table where %s' % (titles[:-1],
+                                                    cls.modelname,
+                                                    cond)
+        dbret = DBHelper.getInstance().select(sql)
+        return transDBRecToObject(dbret, cls.titles)
+    return filter()
+                                            
+
 class ModelBase(type):
     typeMap = {}
 
@@ -125,6 +138,9 @@ class ModelBase(type):
         setattr(tmptype,
                 'all',
                 classmethod(all))
+        setattr(tmptype,
+                'filter',
+                classmethod(filter))
 
         ModelBase.typeMap[name] = tmptype
 
@@ -154,7 +170,6 @@ class DBModel(with_metaclass(ModelBase)):
             self.__dict__[name] = var
 
     def save(self):
-
         attrs = dict((name, value) for name,
                      value in self.__dict__.items()
                      if not name.startswith('__'))
@@ -179,7 +194,7 @@ class DBModel(with_metaclass(ModelBase)):
 
             sqlstr = sqlstr % (self.__table_name__,
                                titles[:-2], values[:-2])
-        print(sqlstr)
+
         if DBModel.getDBHelper():
             DBModel.getDBHelper().execute(sqlstr)
             if not hasId:

@@ -19,6 +19,7 @@ from typesdefine.data_types import WebPage
 from bs4 import BeautifulSoup
 from typesdefine import Enterprise
 from db import DBHelper
+import multiprocessing
 
 
 def GetParser():
@@ -77,6 +78,7 @@ class AliSite(object):
                                        page): page for page in pages}
 
             for future in concurrent.futures.as_completed(futures):
+                print('checking work')
                 try:
                     ents = future.result()
                 except Exception as exc:
@@ -84,6 +86,8 @@ class AliSite(object):
                 else:
                     for ent in ents:
                         ent.save()
+
+            print('searchProduct end')
         # p = multiprocessing.Pool(processes=4)
         # results = []
         # for page in pages:
@@ -134,7 +138,8 @@ class AliSite(object):
             self.searchProduct(product)
         else:
             self.searchSupplier(supplier)
-
+        print('start task end ali')
+        
 
 def GetCompanies(product, page):
     companies = product._getCompanies(BeautifulSoup(page))

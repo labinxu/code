@@ -96,7 +96,7 @@
             <number>5</number>
            </property>
            <property name="columnCount">
-            <number>6</number>
+            <number>4</number>
            </property>
            <row>
             <property name="text">
@@ -107,16 +107,6 @@
            <row/>
            <row/>
            <row/>
-           <column>
-            <property name="text">
-             <string>公司名</string>
-            </property>
-           </column>
-           <column>
-            <property name="text">
-             <string>省份</string>
-            </property>
-           </column>
            <column/>
            <column/>
            <column/>
@@ -226,7 +216,7 @@
                <number>5</number>
               </property>
               <item>
-               <widget class="QListView" name="listCompletedTasks"/>
+               <widget class="QListWidget" name="listCompletedTasks"/>
               </item>
              </layout>
             </widget>
@@ -400,10 +390,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>listCompletedTasks</sender>
+   <signal>itemClicked(QListWidgetItem*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>completedTasksItemClicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>132</x>
+     <y>323</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>420</x>
+     <y>343</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>signalNewTask()</signal>
   <slot>itemChanged()</slot>
   <slot>tabTasksClicked()</slot>
+  <slot>completedTasksItemClicked()</slot>
  </slots>
 </ui>

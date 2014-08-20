@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
 #
-# Created: Tue Aug 19 10:26:27 2014
+# Created: Wed Aug 20 17:34:32 2014
 #      by: PyQt5 UI code generator 5.3.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -43,14 +43,10 @@ class Ui_MainWindow(object):
         self.tbwResult.setMidLineWidth(1)
         self.tbwResult.setWordWrap(False)
         self.tbwResult.setRowCount(5)
-        self.tbwResult.setColumnCount(6)
+        self.tbwResult.setColumnCount(4)
         self.tbwResult.setObjectName("tbwResult")
         item = QtWidgets.QTableWidgetItem()
         self.tbwResult.setVerticalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.tbwResult.setHorizontalHeaderItem(0, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.tbwResult.setHorizontalHeaderItem(1, item)
         self.hzlyTbwResult.addWidget(self.tbwResult)
         self.hzlyTbwResult.setStretch(0, 1)
         self.horizontalLayoutWidget_5 = QtWidgets.QWidget(self.groupBox)
@@ -88,7 +84,7 @@ class Ui_MainWindow(object):
         self.hzlyCompletedTask.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
         self.hzlyCompletedTask.setContentsMargins(5, 5, 5, 5)
         self.hzlyCompletedTask.setObjectName("hzlyCompletedTask")
-        self.listCompletedTasks = QtWidgets.QListView(self.horizontalLayoutWidget_2)
+        self.listCompletedTasks = QtWidgets.QListWidget(self.horizontalLayoutWidget_2)
         self.listCompletedTasks.setObjectName("listCompletedTasks")
         self.hzlyCompletedTask.addWidget(self.listCompletedTasks)
         self.tabTasks.addTab(self.tabTaskCompleted, "")
@@ -163,6 +159,7 @@ class Ui_MainWindow(object):
         self.tabTasks.setCurrentIndex(1)
         self.tbwResult.cellChanged['int','int'].connect(MainWindow.itemChanged)
         self.tabTasks.tabBarClicked['int'].connect(MainWindow.tabTasksClicked)
+        self.listCompletedTasks.itemClicked['QListWidgetItem*'].connect(MainWindow.completedTasksItemClicked)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -170,10 +167,6 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "QT"))
         item = self.tbwResult.verticalHeaderItem(0)
         item.setText(_translate("MainWindow", "1"))
-        item = self.tbwResult.horizontalHeaderItem(0)
-        item.setText(_translate("MainWindow", "公司名"))
-        item = self.tbwResult.horizontalHeaderItem(1)
-        item.setText(_translate("MainWindow", "省份"))
         self.tabTaskRuning.setStatusTip(_translate("MainWindow", "Task is running"))
         self.tabTasks.setTabText(self.tabTasks.indexOf(self.tabTaskRuning), _translate("MainWindow", "未完成"))
         self.tabTasks.setTabText(self.tabTasks.indexOf(self.tabTaskCompleted), _translate("MainWindow", "已完成"))

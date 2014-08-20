@@ -11,6 +11,7 @@ from typesdefine import Task, Enterprise
 import threading
 import time
 from utils import debug
+import multiprocessing
 
 
 class DLGLogin(QtWidgets.QDialog):
@@ -50,26 +51,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.ui.tbwResult.setRowCount(10)
         self.ui.tbwResult.setColumnCount(7)
-        self.runningTasksLocker = threading.Lock()
+        self.taskManager = TaskManager()
+        threading.Thread(target=self.guiMonitor,
+                         args=()).start()
+        self.taskManager.setDb('tasks.db')
         self.stop = False
-        self.tasks = []
-        threading.Thread(target=self.taskMonitor,
-                         args=(self.runningTasksLocker, )).start()
 
-    def guiTasksMonitor(self):
-        try:
-            self.taskManager.resetDb('taskdb.sqlite3')
-            for task in Task.objects().all():
-                print(task.task_name, task.id)
-        except:
-            pass
-        
-        try:
-            self.taskManager.resetDb('task_1.db')
-            for ent in Enterprise.objects().all():
-                print(ent.company_name, ent.id)
-        except:
-            pass
+    def guiMonitor(self):
+        while True:
+            try:
+                task = self.taskManager.popFinisedTask()
+                if task is None:
+                    pn = multiprocessing.current_process().name
+                    print('end gui monitor %s' % pn)
+                    break
+                self.taskManager.resetDb('tasks.db')
+                print('gui monitor task %s' % task.task_name)
+                task.save()
+            except:
+                pass
+            time.sleep(3)
 
     @pyqtSlot()
     def on_actionLogin_triggered(self):
@@ -78,27 +79,6 @@ class MainWindow(QtWidgets.QMainWindow):
         dlgLogin.exec_()
         self.ui.ltOutput.addItem(dlgLogin.ui.edPasswd.text())
         self.ui.ltOutput.addItem(dlgLogin.ui.edUserName.text())
-
-    def taskMonitor(self, locker):
-        self.taskManager = TaskManager.Instance('taskdb.sqlite3')
-        while not self.stop:
-            debug.output('waiting task')
-            if self.tasks:
-                task = self.tasks.pop()
-                task.save()
-                self.taskManager.startTask(task)
-
-            while self.taskManager.running_tasks:
-                task, process = self.taskManager.running_tasks.popitem()
-                if not process.is_alive():
-                    task.task_status = '1'
-                    task.save()
-                    self.taskManager.completed_tasks.append(task)
-                    self.guiTasksMonitor()
-                else:
-                    self.taskManager.running_tasks[task] = process
-                time.sleep(2)
-            time.sleep(2)
 
     @pyqtSlot()
     def on_actionNew_Task_triggered(self):
@@ -113,9 +93,7 @@ class MainWindow(QtWidgets.QMainWindow):
                        task_status=0)
 
         self.ui.listRunningTasks.addItem(taskName)
-        # self.runningTasksLocker.acquire()
-        self.tasks.append(newTask)
-        # self.runningTasksLocker.release()
+        self.taskManager.addTask(newTask)
 
     @pyqtSlot()
     def on_actionStop_triggered(self):
@@ -139,10 +117,35 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, event):
         self.stop = True
+        self.taskManager.addTask(None)
         event.accept()
 
     def tabTasksClicked(self, index):
-        debug.output('tab %s' % index)
+        if index == 1:
+            self.taskManager.resetDb('tasks.db')
+            self.ui.listCompletedTasks.clear()
+            for task in Task.objects().filter('task_status="1"'):
+                self.ui.listCompletedTasks.addItem(task.task_name)
+
+    def completedTasksItemClicked(self, item):
+        self.ui.ltOutput.addItem('select %s' % item.text())
+        self.taskManager.resetDb('%s.db' % item.text())
+        row = 0
+        for ent in Enterprise.objects().all():
+            column = 0
+            for name, var in vars(ent).items():
+                if name == 'id':
+                    continue
+                print('column %d, %s' % (column, name))
+                #header = self.ui.tbwResult.horizontalHeaderItem(column)
+                #header.setText(name)
+               
+                item = QtWidgets.QTableWidgetItem()
+                item.setText(var)
+                self.ui.tbwResult.setItem(row, column, item)
+                column += 1
+            row += 1
+            self.ui.ltOutput.addItem(ent.company_name)
 
 
 def main():
