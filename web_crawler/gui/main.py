@@ -55,7 +55,19 @@ class MainWindow(QtWidgets.QMainWindow):
         threading.Thread(target=self.guiMonitor,
                          args=()).start()
         self.taskManager.setDb('tasks.db')
-        self.stop = False
+        self.initResultView()
+
+    def initResultView(self):
+        self.tabmap = {}
+        self.tabmap["company_name"] = 0
+        self.tabmap["company_contacts"] = 1
+        self.tabmap["company_phone_number"] = 2
+        self.tabmap["company_mobile_phone"] = 3
+        self.tabmap["company_fax"] = 4
+        self.tabmap["company_postcode"] = 5
+        self.tabmap["company_website"] = 6
+        self.tabmap["company_addr"] = 7
+        self.tabmap["company_details"] = 8
 
     def guiMonitor(self):
         while True:
@@ -97,15 +109,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @pyqtSlot()
     def on_actionStop_triggered(self):
-        self.stop = True
+        pass
 
     @pyqtSlot()
     def on_actionStopAll_triggered(self):
-        if self.stop:
-            self.stop = False
-            self.runningTasksLocker = threading.Lock()
-            threading.Thread(target=self.taskMonitor,
-                             args=(self.runningTasksLocker, )).start()
+        pass
+        # self.runningTasksLocker = threading.Lock()
+        # threading.Thread(target=self.taskMonitor,
+        #                  args=(self.runningTasksLocker, )).start()
 
     @pyqtSlot()
     def on_actionInsert_triggered(self):
@@ -132,18 +143,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.taskManager.resetDb('%s.db' % item.text())
         row = 0
         for ent in Enterprise.objects().all():
-            column = 0
             for name, var in vars(ent).items():
                 if name == 'id':
                     continue
-                print('column %d, %s' % (column, name))
-                #header = self.ui.tbwResult.horizontalHeaderItem(column)
-                #header.setText(name)
-               
                 item = QtWidgets.QTableWidgetItem()
                 item.setText(var)
-                self.ui.tbwResult.setItem(row, column, item)
-                column += 1
+                self.ui.tbwResult.setItem(row, self.tabmap[name], item)
             row += 1
             self.ui.ltOutput.addItem(ent.company_name)
 

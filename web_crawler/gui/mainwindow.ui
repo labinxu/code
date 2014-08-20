@@ -93,23 +93,56 @@
             <bool>false</bool>
            </property>
            <property name="rowCount">
-            <number>5</number>
+            <number>0</number>
            </property>
            <property name="columnCount">
-            <number>4</number>
+            <number>10</number>
            </property>
-           <row>
+           <column>
             <property name="text">
-             <string>1</string>
+             <string>公司</string>
             </property>
-           </row>
-           <row/>
-           <row/>
-           <row/>
-           <row/>
-           <column/>
-           <column/>
-           <column/>
+           </column>
+           <column>
+            <property name="text">
+             <string>联系人</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>联系电话</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>手机</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>传真</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>邮编</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>公司主页</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>公司地址</string>
+            </property>
+           </column>
+           <column>
+            <property name="text">
+             <string>备注</string>
+            </property>
+           </column>
            <column/>
           </widget>
          </item>
@@ -251,7 +284,7 @@
      <x>0</x>
      <y>0</y>
      <width>842</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
