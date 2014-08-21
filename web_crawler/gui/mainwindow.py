@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainwindow.ui'
 #
-# Created: Wed Aug 20 22:34:15 2014
+# Created: Thu Aug 21 15:50:42 2014
 #      by: PyQt5 UI code generator 5.3.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -42,7 +42,7 @@ class Ui_MainWindow(object):
         self.tbwResult.setLineWidth(2)
         self.tbwResult.setMidLineWidth(1)
         self.tbwResult.setWordWrap(False)
-        self.tbwResult.setRowCount(1)
+        self.tbwResult.setRowCount(0)
         self.tbwResult.setColumnCount(10)
         self.tbwResult.setObjectName("tbwResult")
         item = QtWidgets.QTableWidgetItem()
@@ -63,8 +63,6 @@ class Ui_MainWindow(object):
         self.tbwResult.setHorizontalHeaderItem(7, item)
         item = QtWidgets.QTableWidgetItem()
         self.tbwResult.setHorizontalHeaderItem(8, item)
-        item = QtWidgets.QTableWidgetItem()
-        self.tbwResult.setHorizontalHeaderItem(9, item)
         self.hzlyTbwResult.addWidget(self.tbwResult)
         self.hzlyTbwResult.setStretch(0, 1)
         self.horizontalLayoutWidget_5 = QtWidgets.QWidget(self.groupBox)

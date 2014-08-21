@@ -49,8 +49,6 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.tbwResult.setRowCount(10)
-        self.ui.tbwResult.setColumnCount(7)
         self.taskManager = TaskManager()
         threading.Thread(target=self.guiMonitor,
                          args=()).start()
@@ -68,6 +66,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabmap["company_website"] = 6
         self.tabmap["company_addr"] = 7
         self.tabmap["company_details"] = 8
+        self.tabmap['id'] = 9
 
     def guiMonitor(self):
         while True:
@@ -124,7 +123,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.tbwResult.setItem(1, 1, newItem)
 
     def itemChanged(self, row, col):
-        self.ui.ltOutput.addItem('item %s, %s' % (col, row))
+        # self.ui.ltOutput.addItem('item %s, %s' % (col, row))
+        pass
 
     def closeEvent(self, event):
         self.stop = True
@@ -142,15 +142,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.ltOutput.addItem('select %s' % item.text())
         self.taskManager.resetDb('%s.db' % item.text())
         row = 0
-        for ent in Enterprise.objects().all():
+        objects = Enterprise.objects().all()
+        self.ui.tbwResult.setRowCount(len(objects))
+
+        self.ui.ltOutput.addItem(str(self.ui.tbwResult.columnCount()))
+        for ent in objects:
             for name, var in vars(ent).items():
-                if name == 'id':
-                    continue
                 item = QtWidgets.QTableWidgetItem()
-                item.setText(var)
+                item.setText(str(var))
                 self.ui.tbwResult.setItem(row, self.tabmap[name], item)
             row += 1
-            self.ui.ltOutput.addItem(ent.company_name)
+        # self.ui.ltOutput.addItem(str(self.ui.tbwResult.rowCount())
+        # self.ui.ltOutput.addItem(ent.company_name)
 
 
 def main():
