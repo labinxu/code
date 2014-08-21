@@ -179,7 +179,7 @@
             </sizepolicy>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="tabTaskRuning">
             <property name="statusTip">
@@ -441,7 +441,6 @@
   </connection>
  </connections>
  <slots>
-  <signal>signalNewTask()</signal>
   <slot>itemChanged()</slot>
   <slot>tabTasksClicked()</slot>
   <slot>completedTasksItemClicked()</slot>

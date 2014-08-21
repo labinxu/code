@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject
 import login
 import dlgnewtask
 from mainwindow import Ui_MainWindow
@@ -11,7 +11,6 @@ from typesdefine import Task, Enterprise
 import threading
 import time
 from utils import debug
-import multiprocessing
 
 
 class DLGLogin(QtWidgets.QDialog):
@@ -45,6 +44,8 @@ class DLGNewTask(QtWidgets.QDialog):
 
 #################################################################
 class MainWindow(QtWidgets.QMainWindow):
+    taskCompleted = pyqtSignal(str)
+
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
@@ -54,6 +55,8 @@ class MainWindow(QtWidgets.QMainWindow):
                          args=()).start()
         self.taskManager.setDb('tasks.db')
         self.initResultView()
+        self.taskResult = {}
+        self.taskCompleted.connect(self.on_taskCompleted)
 
     def initResultView(self):
         self.tabmap = {}
@@ -73,15 +76,22 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 task = self.taskManager.popFinisedTask()
                 if task is None:
-                    pn = multiprocessing.current_process().name
-                    print('end gui monitor %s' % pn)
                     break
                 self.taskManager.resetDb('tasks.db')
-                print('gui monitor task %s' % task.task_name)
+                self.taskCompleted.emit(task.task_name)
                 task.save()
             except:
                 pass
             time.sleep(3)
+
+    def on_taskCompleted(self, taskname):
+        model = self.ui.listRunningTasks.model()
+        for i in range(self.ui.listRunningTasks.count()):
+            item = self.ui.listRunningTasks.item(i)
+            if item.text() == taskname:
+                print('find %s' % taskname)
+                model.removeRow(i)
+                break
 
     @pyqtSlot()
     def on_actionLogin_triggered(self):
@@ -139,21 +149,22 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.ui.listCompletedTasks.addItem(task.task_name)
 
     def completedTasksItemClicked(self, item):
-        self.ui.ltOutput.addItem('select %s' % item.text())
-        self.taskManager.resetDb('%s.db' % item.text())
-        row = 0
-        objects = Enterprise.objects().all()
-        self.ui.tbwResult.setRowCount(len(objects))
+        taskname = item.text()
+        print('resetdb %s.db' % taskname)
+        self.taskManager.resetDb('%s.db' % taskname)
+        if taskname not in self.taskResult.keys():
+            objects = Enterprise.objects().all()
+        else:
+            objects = self.taskResult[taskname]
 
-        self.ui.ltOutput.addItem(str(self.ui.tbwResult.columnCount()))
+        self.ui.tbwResult.setRowCount(len(objects))
+        row = 0
         for ent in objects:
             for name, var in vars(ent).items():
                 item = QtWidgets.QTableWidgetItem()
                 item.setText(str(var))
                 self.ui.tbwResult.setItem(row, self.tabmap[name], item)
             row += 1
-        # self.ui.ltOutput.addItem(str(self.ui.tbwResult.rowCount())
-        # self.ui.ltOutput.addItem(ent.company_name)
 
 
 def main():
