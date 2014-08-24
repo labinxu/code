@@ -1,22 +1,24 @@
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject
-import login
-import dlgnewtask
-from mainwindow import Ui_MainWindow
+#!/usr/bin/env python  
+#coding=utf-8
+import threading
+import time
 import sys
 if '../' not in sys.path:
     sys.path.append('../')
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject
+from windows_tp.login import Ui_Dialog
+from windows_tp.dlgnewtask import Ui_NewTask
+from windows_tp.mainwindow import Ui_MainWindow
 from manager.taskmanager import TaskManager
 from typesdefine import Task, Enterprise
-import threading
-import time
 from utils import debug
 
 
 class DLGLogin(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(DLGLogin, self).__init__(parent)
-        self.ui = login.Ui_Dialog()
+        self.ui = Ui_Dialog()
         self.ui.setupUi(self)
         self.ui.edPasswd.setEchoMode(QtWidgets.QLineEdit.Password)
 
@@ -31,7 +33,7 @@ class DLGNewTask(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
         super(DLGNewTask, self).__init__(parent)
-        self.ui = dlgnewtask.Ui_NewTask()
+        self.ui = Ui_NewTask()
         self.ui.setupUi(self)
         self.ui.leTaskName.setText('task_1')
         self.ui.leSiteName.setText('ali')
