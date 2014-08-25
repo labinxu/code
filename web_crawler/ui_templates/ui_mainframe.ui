@@ -418,7 +418,7 @@
      <rect>
       <x>10</x>
       <y>20</y>
-      <width>661</width>
+      <width>671</width>
       <height>61</height>
      </rect>
     </property>
@@ -447,7 +447,7 @@
    <sender>lw_finished_tasks</sender>
    <signal>itemClicked(QListWidgetItem*)</signal>
    <receiver>main_frame</receiver>
-   <slot>onLWFinishedTasksClicked()</slot>
+   <slot>onLWFinishedTasksItemClicked()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>107</x>
@@ -459,9 +459,43 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>lw_processing_tasks</sender>
+   <signal>itemClicked(QListWidgetItem*)</signal>
+   <receiver>main_frame</receiver>
+   <slot>onLWProcessingTasksItemClicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>107</x>
+     <y>327</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>356</x>
+     <y>338</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tbwg_menubar</sender>
+   <signal>tabBarClicked(int)</signal>
+   <receiver>main_frame</receiver>
+   <slot>onTabBarClicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>355</x>
+     <y>310</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>356</x>
+     <y>338</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onNewTaskClicked()</slot>
-  <slot>onLWFinishedTasksClicked()</slot>
+  <slot>onLWFinishedTasksItemClicked()</slot>
+  <slot>onLWProcessingTasksItemClicked()</slot>
+  <slot>onTabBarClicked()</slot>
  </slots>
 </ui>

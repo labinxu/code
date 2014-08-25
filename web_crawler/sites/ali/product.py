@@ -9,7 +9,7 @@ if '../../../' not in sys.path:
 if '../../' not in sys.path:
     sys.path.append('../../')
 from bs4 import BeautifulSoup
-from common.debug import debug
+from utils import debug
 from sites.yellowpage import YellowPageParser
 from sites.companypage import CompanyPageParser
 from sites.certificatepage import CertifiactePageParser

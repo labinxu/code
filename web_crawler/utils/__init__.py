@@ -16,24 +16,45 @@ class Debug():
         stream_handler = logging.StreamHandler(sys.stderr)  
         self.logger.addHandler(file_handler)  
         self.logger.addHandler(stream_handler)
+        self.uiOutputSignal = None
+        self.uiOutputLevel = 1
+
+    def setOutputSignal(self, outputSignal):
+        self.uiOutputSignal = outputSignal
+
+    def setLevel(self, level):
+        self.logger.setLevel(level)
 
     def __call__(self, msg):
         self.logger.debug(msg)
+        if self.uiOutputLevel >= 1 and self.uiOutputSignal:
+            self.uiOutputSignal.emit(msg)
 
     def debug(self, msg):
         self.logger.debug(msg)
+        if self.uiOutputLevel >= 1 and self.uiOutputSignal:
+            self.uiOutputSignal.emit(msg)
+        else:
+            self.logger.debug('uioutputis none')
+            
 
     def info(self, msg):
         self.logger.info(msg)
+        if self.uiOutputLevel >= 1 and self.uiOutputSignal:
+            self.uiOutputSignal.emit(msg)
 
     def error(self, msg):
         self.logger.error(msg)
+        if self.uiOutputLevel >= 1 and self.uiOutputSignal:
+            self.uiOutputSignal.emit(msg)
 
     def output(self, msg):
         self.logger.debug(msg)
+        if self.uiOutputLevel >= 1 and self.uiOutputSignal:
+            self.uiOutputSignal.emit(msg)
 
 
-debug = Debug("running.log")
+debug = Debug("run.log")
 
 
 class CommandLine(object):

@@ -4,8 +4,7 @@ import urllib.request as request
 from bs4 import BeautifulSoup
 if '../../' not in sys.path:
     sys.path.append('../../')
-from common.debug import debug
-# import threading
+from utils import debug
 
 
 class PageParser(object):
@@ -32,7 +31,7 @@ class PageParser(object):
                 data = data.encode('utf-8')
                 return data
             except Exception as e:
-                debug.error('%s will retry it' % str(e))
+                debug.error('%s %s will retry again' % (self.pageUrl, str(e)))
                 counter -= 1
 
     def _getSoup(self):
@@ -48,7 +47,7 @@ class PageParser(object):
                 self.soup = BeautifulSoup(data)
                 return self.soup
             except Exception as e:
-                debug.error('%s will retry it' % str(e))
+                debug.error('%s %s will retry again' % (self.pageUrl, str(e)))
                 counter -= 1
 
     def getSoup(self):

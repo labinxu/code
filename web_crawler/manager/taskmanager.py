@@ -28,7 +28,6 @@ class TaskManager(object):
             except psutil.NoSuchProcess:
                 task.task_status = '1'
                 self.completed_tasks.put(task)
-                debug.info('Task %s finised' % task.task_name)
             else:
                 self.running_tasks.put((task, pid))
 

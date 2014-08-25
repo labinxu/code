@@ -13,13 +13,12 @@ if '../../../' not in sys.path:
     sys.path.append('../../../')
 from sites.ali.product import ComanyBySupplier
 from sites.ali.product import CompanyFromProduct
-from common.debug import debug
+from utils import debug
 import socket
 from typesdefine.data_types import WebPage
 from bs4 import BeautifulSoup
 from typesdefine import Enterprise
 from db import DBHelper
-import multiprocessing
 
 
 def GetParser():
@@ -85,31 +84,6 @@ class AliSite(object):
                 else:
                     for ent in ents:
                         ent.save()
-
-        # p = multiprocessing.Pool(processes=4)
-        # results = []
-        # for page in pages:
-
-        #     try:
-        #         res = p.apply_async(GetCompanies,
-        #                             args=(product, page))
-        #         results.append(res)
-        #     except Exception as e:
-        #         print(str(e))
-
-        #     # GetCompanies(product, page)
-        #     break
-        # p.close()
-
-        # while True:
-        #     if results:
-        #         res = results.pop()
-        #         if res.ready():
-        #             res.get().save()
-        #         else:
-        #             results.insert(0, res)
-        #     else:
-        #         time.sleep(1)
 
     def searchSupplier(self, keywords):
         url = 'http://s.1688.com/company/company_search.htm'

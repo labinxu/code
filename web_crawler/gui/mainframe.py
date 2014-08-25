@@ -1,6 +1,6 @@
-# !/usr/bin/env python  
+# !/usr/bin/env python
 # coding=utf-8
-import sys
+import sys, os
 import time
 import threading
 if '../' not in sys.path:
@@ -15,10 +15,9 @@ from ui_templates.ui_mainform import Ui_main_frame
 from manager.taskmanager import TaskManager
 from typesdefine import Task, Enterprise
 from utils import debug
-
 from multiprocessing import freeze_support
 # for cx_freeze fixed
-sys.stdout = open('mainframe.log', 'w')
+sys.stdout = open('run.log', 'a')
 sys.stderr = sys.stdout
 freeze_support()
 
@@ -26,6 +25,7 @@ freeze_support()
 class MainFrame(QDialog):
     signalTaskCompleted = pyqtSignal(str)
     signalCreatedSuccessful = pyqtSignal()
+    signalUiOutputUpdate = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super(MainFrame, self).__init__(parent)
@@ -34,13 +34,21 @@ class MainFrame(QDialog):
         self.initResultView()
         self.taskManager = None
         self.taskResult = {}
-        threading.Thread(target=self.guiMonitor, args=()).start()
+
+        # signals
         self.signalTaskCompleted.connect(self.onTaskCompleted)
+        self.signalUiOutputUpdate.connect(self.output)
+        debug.setOutputSignal(self.signalUiOutputUpdate)
+
+        threading.Thread(target=self.guiMonitor, args=()).start()
+        # end __init__
         self.signalCreatedSuccessful.connect(self.onCreatedSuccessful)
         self.signalCreatedSuccessful.emit()
 
+    def output(self, msg):
+        self.ui.lw_output.addItem(msg)
+
     def onCreatedSuccessful(self):
-        debug.info('Main Frame created')
         self.initTaskManager()
 
     def initTaskManager(self):
@@ -71,21 +79,42 @@ class MainFrame(QDialog):
                 if task is None:
                     break
                 self.taskManager.resetDb('tasks.db')
-                debug.info('gui monitor %s finised' % task.task_name)
                 self.signalTaskCompleted.emit(task.task_name)
                 task.save()
             except:
                 pass
             time.sleep(3)
 
-    def onLWFinishedTasksClicked(self, item):
+    def _fillCompaniesTable(self, tableWidget, objects):
+
+        tableWidget.setRowCount(len(objects))
+        row = 0
+        for ent in objects:
+            for name, var in vars(ent).items():
+                item = QtWidgets.QTableWidgetItem()
+                item.setText(str(var))
+                tableWidget.setItem(row, self.tabmap[name], item)
+            row += 1
+
+    def onLWProcessingTasksItemClicked(self, item):
         taskname = item.text()
         self.taskManager.resetDb('%s.db' % taskname)
         if taskname not in self.taskResult.keys():
             objects = Enterprise.objects().all()
         else:
             objects = self.taskResult[taskname]
+        
+        self._fillCompaniesTable(self.ui.tw_processing_task_details, objects)
 
+    def onLWFinishedTasksItemClicked(self, item):
+        taskname = item.text()
+        self.taskManager.resetDb('%s.db' % taskname)
+        if taskname not in self.taskResult.keys():
+            objects = Enterprise.objects().all()
+        else:
+            objects = self.taskResult[taskname]
+        self._fillCompaniesTable(self.ui.tw_finished_task_details, objects)
+        return
         self.ui.tw_finished_task_details.setRowCount(len(objects))
         row = 0
         for ent in objects:
@@ -97,6 +126,14 @@ class MainFrame(QDialog):
                                                          item)
             row += 1
 
+    def onTabBarClicked(self, index):
+        if index == 2:
+            self.taskManager.resetDb('tasks.db')
+            self.ui.lw_finished_tasks.clear()
+            tasks = Task.objects().filter('task_status="1"')
+            for task in tasks:
+                self.ui.lw_finished_tasks.addItem(task.task_name)
+
     def onTaskCompleted(self, taskname):
         debug.info('task %s finished' % taskname)
         model = self.ui.lw_processing_tasks.model()
@@ -107,26 +144,31 @@ class MainFrame(QDialog):
                 self.ui.lw_finished_tasks.addItem(taskname)
                 break
 
+    def hasSameTask(self, taskName):
+
+        if os.path.exists('%s.db' % taskName):
+            return False
+        return True
+
     def onNewTaskClicked(self):
         '''Create a new task'''
-        msginfo = 'New Task clicked'
-        self.ui.lw_output.addItem(msginfo)
 
         taskName = self.ui.le_task_name.text()
         siteName = self.ui.lb_current_site.text()
         keyWords = self.ui.le_search_keywords.text()
         if not (taskName and siteName and keyWords):
             return
-        msginfo = 'New task %s,%s,%s' % (taskName, siteName, keyWords)
-        debug.info(msginfo)
-        self.ui.lw_output.addItem(msginfo)
-
+        if not self.hasSameTask(taskName):
+            debug.info('Change task name please')
+            return
         newTask = Task(task_name=taskName,
                        task_site_name=siteName,
                        task_search_words=keyWords,
                        task_status=0)
         self.ui.lw_processing_tasks.addItem(taskName)
         self.taskManager.addTask(newTask)
+        msginfo = 'Task %s is running' % taskName
+        debug.info(msginfo)
 
     def closeEvent(self, event):
         debug.info('received close evnet')
