@@ -4,7 +4,7 @@ from cx_Freeze import setup, Executable
   
 includes = ['atexit', 'sys','PyQt5.QtCore','PyQt5.QtGui', 'PyQt5.QtWidgets']
 excludes = []
-include_files=[('c:\\apps\Python34\Lib\site-packages\PyQt5\libEGL.dll', 'libEGL.dll')]
+include_files=[('d:\\apps\Python34_32\Lib\site-packages\PyQt5\libEGL.dll', 'libEGL.dll')]
 packages = ['sites']
 path = []
 base = None

@@ -67,21 +67,28 @@ class AliSite(object):
         pages = []
         pages.append(page)
         while page:
-            break
             page = product.getNextPageData(page)
             pages.append(page)
+            break
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = {executor.submit(GetCompanies,
                                        product,
                                        page): page for page in pages}
-
+            process = 0
+            maxnumer = len(futures)
+            debug.info('max number %s' % len(futures))
+            finished = 0
             for future in concurrent.futures.as_completed(futures):
                 try:
                     ents = future.result()
                 except Exception as exc:
                     debug.error(str(exc))
                 else:
+                    finished += 1
+                    process = (finished / maxnumer) * 100
+                    debug.info('process %s%' % str(process))
+
                     for ent in ents:
                         ent.save()
 
