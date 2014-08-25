@@ -29,7 +29,7 @@ class DBHelper(DBOperator):
     @staticmethod
     def getInstance(dbname=None):
         if not DBHelper._instance:
-            print('db name %s' % dbname)
+            pass
             DBHelper._instance = DBHelper(dbname)
         return DBHelper._instance
 
@@ -163,7 +163,7 @@ class DBModel(with_metaclass(ModelBase)):
         try:
             return DBHelper.getInstance()
         except Exception as e:
-            print('get DB helper error %s' % str(e))
+            pass
 
     def __init__(self, *args, **kwargs):
         for name, var in kwargs.items():

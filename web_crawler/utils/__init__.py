@@ -1,69 +1,39 @@
 # -*- coding: utf-8 -*-
-import datetime
 import logging
 import sys
-
-
-class Executor(object):
-    def __init__(self, debug=None):
-        self.debug = debug
-
-    def execute(self, command, timeout=None):
-        pass
 
 
 class Debug():
     '''
     Debug info print( and write the log into files
     '''
-    def __init__(self, logger=None, level=2):
-        self.level = level
-        self.logger = logger
-        format = "[%(levelname)s][%(asctime)%s][%(message)s']\
-[%(filename)s:%(funcName)s:%(lineno)s]"
-
-        logging.basicConfig(filename=sys.argv[0]+".log",
-                            level=logging.DEBUG,
-                            filemode='w',
-                            format=format)
-
-    def formatLog(self, msg):
-        '''
-        Insert the time into line
-        '''
-        timeprefix = datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
-        return '[%s]%s' % (timeprefix, msg)
+    def __init__(self, logfile):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(10)
+        formatter = logging.Formatter('%(name)-6s %(asctime)s %(levelname)-4s %(message)s', '%a, %d %b %Y %H:%M:%S',)  
+        file_handler = logging.FileHandler(logfile)  
+        file_handler.setFormatter(formatter)  
+        stream_handler = logging.StreamHandler(sys.stderr)  
+        self.logger.addHandler(file_handler)  
+        self.logger.addHandler(stream_handler)
 
     def __call__(self, msg):
-        self.debug(self.formatLog(msg))
+        self.logger.debug(msg)
 
     def debug(self, msg):
-        msg = self.formatLog(msg)
-        if self.level >= 3:
-            print("Tool:Debug %s" % msg)
-        if self.logger:
-            self.logger.append(msg)
+        self.logger.debug(msg)
 
     def info(self, msg):
-        msg = self.formatLog(msg)
-        if self.level >= 2:
-            print("Tool:Info %s" % msg)
-        if self.logger:
-            self.logger.append(msg)
+        self.logger.info(msg)
 
     def error(self, msg):
-        msg = self.formatLog(msg)
-        if self.level >= 1:
-            print("Tool:Error %s" % msg)
-        if self.logger:
-            self.logger.append(msg)
+        self.logger.error(msg)
 
     def output(self, msg):
-        msg = self.formatLog(msg)
-        print('Tool:%s' % msg)
-        if self.logger:
-            self.logger.append(msg)
-debug = Debug(level=3)
+        self.logger.debug(msg)
+
+
+debug = Debug("running.log")
 
 
 class CommandLine(object):

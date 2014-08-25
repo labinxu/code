@@ -4,7 +4,8 @@
 class PageData(object):
     def displayAttributes(self):
         for name, value in vars(self).items():
-            print('%s = %s' % (name, value))
+            # print('%s = %s' % (name, value))
+            pass
 
     def storeSting(self):
         titles = []

@@ -91,7 +91,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for i in range(self.ui.listRunningTasks.count()):
             item = self.ui.listRunningTasks.item(i)
             if item.text() == taskname:
-                print('find %s' % taskname)
+ 
                 model.removeRow(i)
                 break
 
@@ -152,7 +152,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def completedTasksItemClicked(self, item):
         taskname = item.text()
-        print('resetdb %s.db' % taskname)
         self.taskManager.resetDb('%s.db' % taskname)
         if taskname not in self.taskResult.keys():
             objects = Enterprise.objects().all()

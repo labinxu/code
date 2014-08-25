@@ -78,16 +78,14 @@ class AliSite(object):
                                        page): page for page in pages}
 
             for future in concurrent.futures.as_completed(futures):
-                print('checking work')
                 try:
                     ents = future.result()
                 except Exception as exc:
-                    print('generated an exception :%s' % (exc))
+                    debug.error(str(exc))
                 else:
                     for ent in ents:
                         ent.save()
 
-            print('searchProduct end')
         # p = multiprocessing.Pool(processes=4)
         # results = []
         # for page in pages:
@@ -138,8 +136,7 @@ class AliSite(object):
             self.searchProduct(product)
         else:
             self.searchSupplier(supplier)
-        print('start task end ali')
-        
+
 
 def GetCompanies(product, page):
     companies = product._getCompanies(BeautifulSoup(page))

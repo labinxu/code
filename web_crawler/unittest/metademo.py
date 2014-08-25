@@ -29,7 +29,6 @@ class DBHelper(DBOperator):
     @staticmethod
     def getInstance(dbname=None):
         if not DBHelper._instance:
-            print('db name %s' % dbname)
             DBHelper._instance = DBHelper(dbname)
         return DBHelper._instance
 
@@ -87,7 +86,6 @@ def transDBRecToObject(dbret, titles):
 def all(cls):
     def al():
         sql = 'select * from %s_table' % cls.modelname
-        print(sql)
         #dbret = DBHelper.getInstance().select(sql)
         return None
     return al()
@@ -144,7 +142,8 @@ class DBModel(with_metaclass(ModelBase)):
         try:
             return DBHelper.getInstance()
         except Exception as e:
-            print('get DB helper error %s' % str(e))
+            pass
+            # print('get DB helper error %s' % str(e))
 
     def __init__(self, *args, **kwargs):
         for name, var in kwargs.items():

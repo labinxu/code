@@ -7,29 +7,28 @@ import importlib
 from multiprocessing import Process, Queue
 import psutil
 import multiprocessing
+import sys
+if '../' not in sys.path:
+    sys.path.append('../')
+from utils import debug
 
 
 class TaskManager(object):
     _instance = None
 
     def runningTaskMonitor(self):
-        print('start running task monitor')
-        print(multiprocessing.current_process().name)
-
+        debug.info('start running monitor')
         while True:
             task, pid = self.running_tasks.get()
             if task is None:
-                pn = multiprocessing.current_process().name
-                print('end running monitor %s' % pn)
                 self.completed_tasks.put(None)
                 break
-            print('check %s id %s' % (task.task_name, pid))
             try:
                 psutil.Process(pid)
             except psutil.NoSuchProcess:
                 task.task_status = '1'
                 self.completed_tasks.put(task)
-                print('task %s finished' % task.task_name)
+                debug.info('Task %s finised' % task.task_name)
             else:
                 self.running_tasks.put((task, pid))
 
@@ -39,17 +38,16 @@ class TaskManager(object):
         return self.completed_tasks.get()
 
     def taskMonitor(self):
-        print(multiprocessing.current_process().name)
-        print('start task Monitor')
+        debug.info('start task monitor')
+
         while True:
             # TaskManager.newtask_cond.acquire()
             task = self.new_tasks.get()
             if task is None:
-                pn = multiprocessing.current_process().name
                 self.running_tasks.put((None, 0))
                 break
+            debug.info('received task %s' % task.task_name)
             self.startTask(task)
-            print('start task %s' % task.task_name)
 
     @staticmethod
     def Instance(taskdb=None):
@@ -69,8 +67,11 @@ class TaskManager(object):
         self.completed_tasks = Queue()
         self.new_tasks = Queue()
 
+    def startTaskMonitor(self):
         self.task_monitor = Process(target=self.taskMonitor, args=())
         self.task_monitor.start()
+
+    def startRunningMonitor(self):
         self.running_monitor = Process(target=self.runningTaskMonitor,
                                        args=())
         self.running_monitor.start()
@@ -82,18 +83,7 @@ class TaskManager(object):
         module = importlib.import_module('sites.%s.main' % siteName)
         return module.GetParser()
 
-    # def taskMonitor(self):
-    #     while self.running_tasks:
-    #         task, process = self.running_tasks.popitem()
-    #         if not process.is_alive():
-    #             task.task_status = '1'
-    #             self.taskManager.completed_tasks.append(task)
-    #         else:
-    #             self.taskManager.running_tasks[task] = process
-
     def addTask(self, task):
-        if task:
-            print('add task %s' % task.task_name)
         self.new_tasks.put(task)
         
     def startTask(self, task):

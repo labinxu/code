@@ -1,15 +1,31 @@
 import sys
 from cx_Freeze import setup, Executable
 
-base = "Win32GUI"
-path_platforms = [("D:/apps\Python34_32\Lib\site-packages\PyQt5\plugins\platforms\qwindows.dll",
-"platforms\qwindows.dll"),('D:\\apps\Python34_32\Lib\site-packages\PyQt5\libEGL.dll', 'libEGL.dll')]
-build_options = {"includes" : "atexit", "include_files" :  path_platforms}
+  
+includes = ['atexit', 'sys','PyQt5.QtCore','PyQt5.QtGui', 'PyQt5.QtWidgets']
+excludes = []
+include_files=[('c:\\apps\Python34\Lib\site-packages\PyQt5\libEGL.dll', 'libEGL.dll')]
+packages = ['sites']
+path = []
+base = None
+name = 'mainframe.exe'
 
-setup(
-    name = "simple_PyQt5",
-    version = "0.1",
-    description = "Sample cx_Freeze PyQt4 script",
-    options = {"build_exe" : build_options},
-    executables = [Executable("gui/mainframe.py", base = base)]
-    )
+
+if sys.platform == 'win32':
+    base = 'Win32GUI'
+options = {
+    'build_exe': {
+        "includes": includes,
+        "excludes": excludes,
+        "packages": packages,
+        'include_files':include_files,
+        "path": path
+    }
+}
+executables = [Executable('gui/mainframe.py', base=base)]
+setup(name=name,
+      version='0.1',
+      description='Sample PyQT5-matplotlib script',
+      executables=executables,
+      options=options
+      )

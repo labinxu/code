@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>2</number>
    </property>
    <widget class="QWidget" name="newtask">
     <attribute name="title">
@@ -189,6 +189,51 @@
         <height>431</height>
        </rect>
       </property>
+      <column>
+       <property name="text">
+        <string>CompanyName</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Contacts</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>PhoneNumber</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>MobilePhone</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Fax</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Postcode</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Website</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>address</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Details</string>
+       </property>
+      </column>
      </widget>
     </widget>
    </widget>
@@ -217,6 +262,51 @@
         <height>431</height>
        </rect>
       </property>
+      <column>
+       <property name="text">
+        <string>CompanyName</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Contacts</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>PhoneNumber</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>MobilePhone</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Fax</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Postcode</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Website</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Address</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>Details</string>
+       </property>
+      </column>
      </widget>
     </widget>
     <widget class="QGroupBox" name="gb_finished_tasks">
@@ -341,7 +431,7 @@
    <sender>pb_new_task</sender>
    <signal>clicked()</signal>
    <receiver>main_frame</receiver>
-   <slot>on_new_task_clicked()</slot>
+   <slot>onNewTaskClicked()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>519</x>
@@ -353,8 +443,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>lw_finished_tasks</sender>
+   <signal>itemClicked(QListWidgetItem*)</signal>
+   <receiver>main_frame</receiver>
+   <slot>onLWFinishedTasksClicked()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>107</x>
+     <y>327</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>356</x>
+     <y>338</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
-  <slot>on_new_task_clicked()</slot>
+  <slot>onNewTaskClicked()</slot>
+  <slot>onLWFinishedTasksClicked()</slot>
  </slots>
 </ui>
