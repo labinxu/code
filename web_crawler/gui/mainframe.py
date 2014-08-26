@@ -26,6 +26,7 @@ class MainFrame(QDialog):
     signalTaskCompleted = pyqtSignal(str)
     signalCreatedSuccessful = pyqtSignal()
     signalUiOutputUpdate = pyqtSignal(str)
+    signalUpdateTaskProgress = pyqtSignal()
 
     def __init__(self, parent=None):
         super(MainFrame, self).__init__(parent)
@@ -38,15 +39,26 @@ class MainFrame(QDialog):
         # signals
         self.signalTaskCompleted.connect(self.onTaskCompleted)
         self.signalUiOutputUpdate.connect(self.output)
+        self.signalUpdateTaskProgress.connect(self.updateTaskProgress)
         debug.setOutputSignal(self.signalUiOutputUpdate)
 
         threading.Thread(target=self.guiMonitor, args=()).start()
+        
         # end __init__
         self.signalCreatedSuccessful.connect(self.onCreatedSuccessful)
         self.signalCreatedSuccessful.emit()
 
     def output(self, msg):
         self.ui.lw_output.addItem(msg)
+
+    def updateTaskProgress(self):
+        tasks = self.ui.lw_processing_tasks
+        count = tasks.count()
+        for index in range(count):
+            item = tasks.item(index)
+            taskName = item.text().split(':')[0]
+            progress = self.taskManager.getProgress(taskName)
+            item.setText('%s:%s' % (taskName, progress.value) + '%')
 
     def onCreatedSuccessful(self):
         self.initTaskManager()
@@ -81,6 +93,8 @@ class MainFrame(QDialog):
                 self.taskManager.resetDb('tasks.db')
                 self.signalTaskCompleted.emit(task.task_name)
                 task.save()
+                # update the progress
+                self.signalUpdateTaskProgress.emit()
             except:
                 pass
             time.sleep(3)
@@ -165,7 +179,7 @@ class MainFrame(QDialog):
                        task_site_name=siteName,
                        task_search_words=keyWords,
                        task_status=0)
-        self.ui.lw_processing_tasks.addItem(taskName)
+        self.ui.lw_processing_tasks.addItem('%s:0' % taskName + '%')
         self.taskManager.addTask(newTask)
         msginfo = 'Task %s is running' % taskName
         debug.info(msginfo)

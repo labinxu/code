@@ -4,9 +4,8 @@ import os
 import time
 from typesdefine import Task
 import importlib
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Value
 import psutil
-import multiprocessing
 import sys
 if '../' not in sys.path:
     sys.path.append('../')
@@ -46,7 +45,8 @@ class TaskManager(object):
                 self.running_tasks.put((None, 0))
                 break
             debug.info('received task %s' % task.task_name)
-            self.startTask(task)
+            progress = Value('d', 0.0)
+            self.startTask(task, progress)
 
     @staticmethod
     def Instance(taskdb=None):
@@ -65,6 +65,7 @@ class TaskManager(object):
         self.running_tasks = Queue()
         self.completed_tasks = Queue()
         self.new_tasks = Queue()
+        self.tasksInfo = {}
 
     def startTaskMonitor(self):
         self.task_monitor = Process(target=self.taskMonitor, args=())
@@ -84,10 +85,18 @@ class TaskManager(object):
 
     def addTask(self, task):
         self.new_tasks.put(task)
-        
-    def startTask(self, task):
+
+    def getProgress(self, taskName):
+        return self.tasksInfo[taskName]
+
+    def startTask(self, task, progress):
         crawler = self.getSiteParser(task.task_site_name)
         p = Process(target=crawler.startTask,
-                    args=(task.task_name, task.task_search_words, None))
+                    args=(task.task_name,
+                          progress,
+                          task.task_search_words,
+                          None))
+
         p.start()
         self.running_tasks.put((task, p.pid))
+        self.tasksInfo[task.task_name] = progress

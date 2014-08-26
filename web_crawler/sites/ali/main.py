@@ -59,7 +59,7 @@ class AliSite(object):
         # input = soup.find('input', attrs={'id': 'keywordinput'})
         # self.webPage.postKeywords = input.get('name')
 
-    def searchProduct(self, keywords):
+    def searchProduct(self, keywords, progress):
         url = 'http://s.1688.com/selloffer/offer_search.htm'
         postdata = {'keywords': keywords.encode('gbk')}
         product = CompanyFromProduct(url, postdata)
@@ -75,7 +75,6 @@ class AliSite(object):
             futures = {executor.submit(GetCompanies,
                                        product,
                                        page): page for page in pages}
-            process = 0
             maxnumer = len(futures)
             debug.info('max number %s' % len(futures))
             finished = 0
@@ -86,13 +85,12 @@ class AliSite(object):
                     debug.error(str(exc))
                 else:
                     finished += 1
-                    process = (finished / maxnumer) * 100
-                    debug.info('process %s%' % str(process))
-
+                    progress.value = (finished / maxnumer) * 100
+                    debug.info('progress %s' % progress.value)
                     for ent in ents:
                         ent.save()
 
-    def searchSupplier(self, keywords):
+    def searchSupplier(self, keywords, progress):
         url = 'http://s.1688.com/company/company_search.htm'
         postdata = {'keywords': keywords.encode('gbk')}
 
@@ -105,7 +103,7 @@ class AliSite(object):
             else:
                 debug.output('%s, %s' % (company.companName, company.url))
 
-    def startTask(self, taskName, product=None, supplier=None):
+    def startTask(self, taskName, progress, product=None, supplier=None):
         dbname = '%s.db' % taskName
         if os.path.exists(dbname):
             DBHelper.getInstance(dbname)
@@ -114,9 +112,9 @@ class AliSite(object):
             dbhelper.execute(Enterprise.__init_table__)
 
         if product:
-            self.searchProduct(product)
+            self.searchProduct(product, progress)
         else:
-            self.searchSupplier(supplier)
+            self.searchSupplier(supplier, progress)
 
 
 def GetCompanies(product, page):
