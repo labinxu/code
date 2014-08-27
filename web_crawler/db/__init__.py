@@ -3,6 +3,7 @@ import sqlite3
 import sys
 if '../' not in sys.path:
     sys.path.append('../')
+from utils import debug
 
 
 class DBOperator(object):
@@ -15,9 +16,13 @@ class DBOperator(object):
         self.db.commit()
 
     def select(self, sql):
-        cursor = self.db.cursor()
-        cursor.execute(sql)
-        return cursor.fetchall()
+        try:
+            cursor = self.db.cursor()
+            cursor.execute(sql)
+            return cursor.fetchall()
+        except sqlite3.OperationalError as e:
+            debug.error(str(e))
+            return []
 
     def getdb(self):
         return self.db

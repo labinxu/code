@@ -26,7 +26,7 @@ class MainFrame(QDialog):
     signalTaskCompleted = pyqtSignal(str)
     signalCreatedSuccessful = pyqtSignal()
     signalUiOutputUpdate = pyqtSignal(str)
-    signalUpdateTaskProgress = pyqtSignal()
+    signalUpdateTaskProgress = pyqtSignal(str, float)
 
     def __init__(self, parent=None):
         super(MainFrame, self).__init__(parent)
@@ -42,8 +42,6 @@ class MainFrame(QDialog):
         self.signalUpdateTaskProgress.connect(self.updateTaskProgress)
         debug.setOutputSignal(self.signalUiOutputUpdate)
 
-        threading.Thread(target=self.guiMonitor, args=()).start()
-        
         # end __init__
         self.signalCreatedSuccessful.connect(self.onCreatedSuccessful)
         self.signalCreatedSuccessful.emit()
@@ -52,23 +50,29 @@ class MainFrame(QDialog):
         self.ui.lw_output.addItem(msg)
 
     def updateTaskProgress(self):
-        tasks = self.ui.lw_processing_tasks
-        count = tasks.count()
-        for index in range(count):
-            item = tasks.item(index)
-            taskName = item.text().split(':')[0]
-            progress = self.taskManager.getProgress(taskName)
-            item.setText('%s:%s' % (taskName, progress.value) + '%')
+        debug.info('start update task progress')
+        while True:
+
+            for taskName, progress in self.taskManager.running_tasks_status.items():
+                tasks = self.ui.lw_processing_tasks
+                count = tasks.count()
+                for index in range(count):
+                    item = tasks.item(index)
+                    name = item.text()
+                    if name == taskName:
+                        debug.info('%s %s' % (taskName, progress) + '%')
+            time.sleep(1)
 
     def onCreatedSuccessful(self):
         self.initTaskManager()
+        threading.Thread(target=self.guiMonitor, args=()).start()
+        threading.Thread(target=self.updateTaskProgress, args=()).start()
 
     def initTaskManager(self):
         # task relations
         self.taskManager = TaskManager()
         self.taskManager.setDb('tasks.db')
-        self.taskManager.startTaskMonitor()
-        self.taskManager.startRunningMonitor()
+        self.taskManager.start()
 
     def initResultView(self):
         self.tabmap = {}
@@ -93,8 +97,6 @@ class MainFrame(QDialog):
                 self.taskManager.resetDb('tasks.db')
                 self.signalTaskCompleted.emit(task.task_name)
                 task.save()
-                # update the progress
-                self.signalUpdateTaskProgress.emit()
             except:
                 pass
             time.sleep(3)
@@ -179,7 +181,7 @@ class MainFrame(QDialog):
                        task_site_name=siteName,
                        task_search_words=keyWords,
                        task_status=0)
-        self.ui.lw_processing_tasks.addItem('%s:0' % taskName + '%')
+        self.ui.lw_processing_tasks.addItem(taskName)
         self.taskManager.addTask(newTask)
         msginfo = 'Task %s is running' % taskName
         debug.info(msginfo)

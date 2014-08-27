@@ -42,6 +42,7 @@ class AliSite(object):
         self.companies = []
         self.webPage = WebPage(url)
         self.webPage.pageName = 'alibaba'
+        self.taskName = None
         # company = Company()
         # company.getTitles())
         # ['phoneNumber', 'faxNumber', 'web', 'address', 'contactPerson',
@@ -59,24 +60,24 @@ class AliSite(object):
         # input = soup.find('input', attrs={'id': 'keywordinput'})
         # self.webPage.postKeywords = input.get('name')
 
-    def searchProduct(self, keywords, progress):
+    def searchProduct(self, keywords):
         url = 'http://s.1688.com/selloffer/offer_search.htm'
         postdata = {'keywords': keywords.encode('gbk')}
         product = CompanyFromProduct(url, postdata)
         page, _ = product.getFirstPageData()
         pages = []
         pages.append(page)
-        while page:
+        counter = 3
+        while page and counter > 0:
             page = product.getNextPageData(page)
             pages.append(page)
-            break
-
+            counter -= 1
+            
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = {executor.submit(GetCompanies,
                                        product,
                                        page): page for page in pages}
             maxnumer = len(futures)
-            debug.info('max number %s' % len(futures))
             finished = 0
             for future in concurrent.futures.as_completed(futures):
                 try:
@@ -85,12 +86,12 @@ class AliSite(object):
                     debug.error(str(exc))
                 else:
                     finished += 1
-                    progress.value = (finished / maxnumer) * 100
-                    debug.info('progress %s' % progress.value)
+                    self.runStatus[self.taskName] = (finished / maxnumer) * 100
+                    debug.info('progress %s' % self.runStatus[self.taskName])
                     for ent in ents:
                         ent.save()
 
-    def searchSupplier(self, keywords, progress):
+    def searchSupplier(self, keywords):
         url = 'http://s.1688.com/company/company_search.htm'
         postdata = {'keywords': keywords.encode('gbk')}
 
@@ -110,11 +111,12 @@ class AliSite(object):
         else:
             dbhelper = DBHelper.getInstance(dbname)
             dbhelper.execute(Enterprise.__init_table__)
-
+        self.taskName = taskName
+        self.runStatus = progress
         if product:
-            self.searchProduct(product, progress)
+            self.searchProduct(product)
         else:
-            self.searchSupplier(supplier, progress)
+            self.searchSupplier(supplier)
 
 
 def GetCompanies(product, page):

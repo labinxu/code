@@ -24,14 +24,27 @@ create_table_sql = '''CREATE TABLE if not exists `student` (
 # dbhelper.commit()
 # sql = "select * from student"
 # print(dbhelper.select(sql))
-import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(10)
-formatter = logging.Formatter('%(name)-6s %(asctime)s %(levelname)-4s %(message)s', '%a, %d %b %Y %H:%M:%S',)  
-file_handler = logging.FileHandler("test.log")  
-file_handler.setFormatter(formatter)  
-stream_handler = logging.StreamHandler(sys.stderr)  
-logger.addHandler(file_handler)  
-logger.addHandler(stream_handler)
-logger.debug('debug')
-logger.error('error')
+#import logging
+#logger = logging.getLogger(__name__)
+#logger.setLevel(10)
+#formatter = logging.Formatter('%(name)-6s %(asctime)s %(levelname)-4s %(message)s', '%a, %d %b %Y %H:%M:%S',)  
+#file_handler = logging.FileHandler("test.log")  
+#file_handler.setFormatter(formatter)  
+#stream_handler = logging.StreamHandler(sys.stderr)  
+#logger.addHandler(file_handler)  
+#logger.addHandler(stream_handler)
+#logger.debug('debug')
+#logger.error('error')
+
+import multiprocessing
+from multiprocessing import freeze_support
+freeze_support()
+
+class MyProcess(multiprocessing.Process):
+    def run(self):
+        while True:
+            time.sleep(1)
+            print('process')
+
+p = MyProcess()
+p.start()

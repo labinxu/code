@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui_mainframe.ui'
 #
-# Created: Mon Aug 25 17:56:27 2014
+# Created: Wed Aug 27 16:04:57 2014
 #      by: PyQt5 UI code generator 5.3.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -142,7 +142,7 @@ class Ui_main_frame(object):
         self.lw_output.setObjectName("lw_output")
 
         self.retranslateUi(main_frame)
-        self.tbwg_menubar.setCurrentIndex(2)
+        self.tbwg_menubar.setCurrentIndex(3)
         self.pb_new_task.clicked.connect(main_frame.onNewTaskClicked)
         self.lw_finished_tasks.itemClicked['QListWidgetItem*'].connect(main_frame.onLWFinishedTasksItemClicked)
         self.lw_processing_tasks.itemClicked['QListWidgetItem*'].connect(main_frame.onLWProcessingTasksItemClicked)
