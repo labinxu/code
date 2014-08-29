@@ -1,6 +1,7 @@
 # !/usr/bin/env python
 # coding=utf-8
-import sys, os
+import sys
+import os
 import time
 import threading
 if '../' not in sys.path:
@@ -11,7 +12,9 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5.QtCore import pyqtSignal
 # from PyQt5.QtCore import *
 # from PyQt5.QtGui import *
-from ui_templates.ui_mainform import Ui_main_frame
+from ui_templates.ui_mainframe import Ui_main_frame
+# from ui_templates.ui_mainform import Ui_MainWindow
+
 from manager.taskmanager import TaskManager
 from typesdefine import Task, Enterprise
 from utils import debug
@@ -35,7 +38,10 @@ class MainFrame(QDialog):
         self.initResultView()
         self.taskManager = None
         self.taskResult = {}
-
+        self.stop = False
+        # actions
+        self.actionExportToExcel = QtWidgets.QAction('Export to excel',
+                                                     self.ui.lw_finished_tasks)
         # signals
         self.signalTaskCompleted.connect(self.onTaskCompleted)
         self.signalUiOutputUpdate.connect(self.output)
@@ -46,14 +52,17 @@ class MainFrame(QDialog):
         self.signalCreatedSuccessful.connect(self.onCreatedSuccessful)
         self.signalCreatedSuccessful.emit()
 
+    def on_actionExportToExcel_triggered(self):
+        debug.info('actionExportToExcel')
+
     def output(self, msg):
         self.ui.lw_output.addItem(msg)
 
     def updateTaskProgress(self):
         debug.info('start update task progress')
-        while True:
-
-            for taskName, progress in self.taskManager.running_tasks_status.items():
+        while True and not self.stop:
+            tasks_status = self.taskManager.running_tasks_status
+            for taskName, progress in tasks_status.items():
                 tasks = self.ui.lw_processing_tasks
                 count = tasks.count()
                 for index in range(count):
@@ -119,7 +128,6 @@ class MainFrame(QDialog):
             objects = Enterprise.objects().all()
         else:
             objects = self.taskResult[taskname]
-        
         self._fillCompaniesTable(self.ui.tw_processing_task_details, objects)
 
     def onLWFinishedTasksItemClicked(self, item):
@@ -149,6 +157,7 @@ class MainFrame(QDialog):
             tasks = Task.objects().filter('task_status="1"')
             for task in tasks:
                 self.ui.lw_finished_tasks.addItem(task.task_name)
+            self.ui.lw_finished_tasks.setCurrentItem(None)
 
     def onTaskCompleted(self, taskname):
         debug.info('task %s finished' % taskname)
@@ -189,7 +198,27 @@ class MainFrame(QDialog):
     def closeEvent(self, event):
         debug.info('received close evnet')
         self.taskManager.addTask(None)
+        self.stop = True
         event.accept()
+
+    def contextMenuEvent(self, event):
+        # debug.info('right event x %s ,y %s' % (event.x(), event.y()))
+        #
+        curItem = None
+        indexTab = self.ui.tbwg_menubar.currentIndex()
+        if 2 == indexTab:
+            curItem = self.ui.lw_finished_tasks.currentItem()
+            if not curItem:
+                return
+        popMenu = QtWidgets.QMenu()
+        popMenu.addAction(self.actionExportToExcel)
+        action = popMenu.exec(self.cursor().pos())
+        if action == self.actionExportToExcel:
+            self.onExportToExcel(curItem.text())
+
+    # actions
+    def onExportToExcel(self, taskName):
+        debug.info('%s on export to excel' % taskName)
 
 
 def main():
